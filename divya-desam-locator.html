@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divya Desam Locator - Find Nearest Sacred Temples</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .location-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .btn-locate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-locate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-locate:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        .results {
+            display: none;
+        }
+
+        .temple-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border-left: 4px solid #667eea;
+            animation: slideIn 0.5s ease;
+        }
+
+        .temple-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .temple-name {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .temple-distance {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+
+        .temple-distance strong {
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+
+        .btn-navigate {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .btn-navigate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(17, 153, 142, 0.3);
+        }
+
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .current-location {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #38ef7d;
+        }
+
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .filter-label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .temple-name {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛕 Divya Desam Locator</h1>
+            <p>Find the nearest sacred Vishnu temples from your location</p>
+        </div>
+
+        <div class="location-card">
+            <button class="btn-locate" onclick="findNearestTemples()">
+                📍 Find Nearest Divya Desams
+            </button>
+            
+            <div class="loading" id="loading" style="display:none;">
+                <div class="loading-spinner"></div>
+                <p>Locating nearest temples...</p>
+            </div>
+
+            <div class="error" id="error" style="display:none;"></div>
+            
+            <div id="manualLocationInput" style="display:none; margin-top: 20px;">
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 4px solid #667eea;">
+                    <h3 style="margin-bottom: 15px; color: #333;">Manual Location Entry</h3>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #667eea; margin-bottom: 10px;">Quick Select Major Cities:</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                            <button onclick="usePresetLocation(13.0827, 80.2707, 'Chennai')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Chennai</button>
+                            <button onclick="usePresetLocation(9.9252, 78.1198, 'Madurai')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Madurai</button>
+                            <button onclick="usePresetLocation(11.0168, 76.9558, 'Coimbatore')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Coimbatore</button>
+                            <button onclick="usePresetLocation(10.7870, 79.1378, 'Thanjavur')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Thanjavur</button>
+                            <button onclick="usePresetLocation(10.8505, 78.6967, 'Trichy')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Trichy</button>
+                            <button onclick="usePresetLocation(10.9597, 79.3779, 'Kumbakonam')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Kumbakonam</button>
+                            <button onclick="usePresetLocation(12.9716, 77.5946, 'Bangalore')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Bangalore</button>
+                            <button onclick="usePresetLocation(17.3850, 78.4867, 'Hyderabad')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Hyderabad</button>
+                            <button onclick="usePresetLocation(8.5241, 76.9366, 'Trivandrum')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Trivandrum</button>
+                            <button onclick="usePresetLocation(28.6139, 77.2090, 'Delhi')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Delhi</button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Or enter coordinates manually:</label>
+                        <input type="number" id="manualLat" placeholder="Latitude (e.g., 13.0827)" step="0.0001" min="-90" max="90" style="width: 48%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; margin-right: 2%;">
+                        <input type="number" id="manualLng" placeholder="Longitude (e.g., 80.2707)" step="0.0001" min="-180" max="180" style="width: 48%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                    </div>
+                    
+                    <button onclick="useManualLocation()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 30px; border-radius: 25px; cursor: pointer; margin-top: 10px;">
+                        Use This Location
+                    </button>
+                    
+                    <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 8px;">
+                        <small><strong>Tip:</strong> You can find your coordinates on Google Maps by right-clicking any location and selecting "What's here?"</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-section" id="filterSection" style="display:none;">
+            <label class="filter-label">Show top:</label>
+            <select class="filter-input" id="resultCount" onchange="updateResults()">
+                <option value="5">5 temples</option>
+                <option value="10" selected>10 temples</option>
+                <option value="20">20 temples</option>
+                <option value="108">All 106 temples</option>
+            </select>
+        </div>
+
+        <div class="current-location" id="currentLocation" style="display:none;"></div>
+
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        // Divya Desam temples data with approximate coordinates
+        const divyaDesams = [
+            { name: "ThiruArangam", displayName: "Sri Ranganathaswamy Temple, Srirangam", lat: 10.8620, lng: 78.6960, link: "https://www.google.com/maps/search/?api=1&query=Sri+Ranganathaswamy+Temple,+Srirangam" },
+            { name: "ThiruKoazhi", displayName: "Nachiyar Koil, Thirunaraiyur", lat: 10.9485, lng: 79.4745, link: "https://www.google.com/maps/search/?api=1&query=Nachiyar+Koil,+Thirunaraiyur" },
+            { name: "ThiruKarambanoor", displayName: "Uthamar Kovil", lat: 10.8145, lng: 78.8985, link: "https://www.google.com/maps/search/?api=1&query=Uthamar+Kovil,+Pichandar+Koil" },
+            { name: "ThiruVellarai", displayName: "Pundarikakshan Perumal Temple", lat: 10.8533, lng: 78.5742, link: "https://www.google.com/maps/search/?api=1&query=Pundarikakshan+Perumal+Temple,+Thiruvellarai" },
+            { name: "ThiruAnbil", displayName: "Sundararaja Perumal Temple, Anbil", lat: 10.8372, lng: 78.8158, link: "https://www.google.com/maps/search/?api=1&query=Sundararaja+Perumal+Temple,+Anbil" },
+            { name: "ThiruPer Nagar", displayName: "Appakkudathaan Perumal Temple", lat: 10.8645, lng: 78.7810, link: "https://www.google.com/maps/search/?api=1&query=Appakkudathaan+Perumal+Temple,+Koviladi" },
+            { name: "ThiruKandiyur", displayName: "Hara Saabha Vimocchana Temple", lat: 11.0740, lng: 79.4525, link: "https://www.google.com/maps/search/?api=1&query=Hara+Saabha+Vimocchana+Perumal+Temple,+Kandiyur" },
+            { name: "ThiruKoodalur", displayName: "Aduthurai Perumal Kovil", lat: 10.9945, lng: 79.4819, link: "https://www.google.com/maps/search/?api=1&query=Aduthurai+Perumal+Kovil,+Thirukoodalur" },
+            { name: "ThiruKavithalam", displayName: "Gajendra Varadha Temple, Kabisthalam", lat: 10.9729, lng: 79.3740, link: "https://www.google.com/maps/search/?api=1&query=Gajendra+Varadha+Perumal+Temple,+Kabisthalam" },
+            { name: "ThiruPullam boothangudi", displayName: "Valvil Raman Temple", lat: 10.9344, lng: 79.2511, link: "https://www.google.com/maps/search/?api=1&query=Valvil+Raman+Perumal+Temple,+Pullabhoothangudi" },
+            { name: "ThiruAthanoor", displayName: "Aandalum Akkum Aayan Temple", lat: 10.8856, lng: 79.3642, link: "https://www.google.com/maps/search/?api=1&query=Aandalum+Akkum+Aayan+Perumal+Temple,+Athanoor" },
+            { name: "ThiruKudanthai", displayName: "Sarangapani Temple, Kumbakonam", lat: 10.9597, lng: 79.3779, link: "https://www.google.com/maps/search/?api=1&query=Sarangapani+Temple,+Kumbakonam" },
+            { name: "ThiruVinnagar", displayName: "Oppiliappan Temple", lat: 10.9156, lng: 79.2997, link: "https://www.google.com/maps/search/?api=1&query=Oppiliappan+Temple,+Thirunageswaram,+Kumbakonam" },
+            { name: "ThiruNaraiyur", displayName: "Nachiyar Koil", lat: 10.9485, lng: 79.4745, link: "https://www.google.com/maps/search/?api=1&query=Nachiyar+Koil,+Thirunaraiyur" },
+            { name: "ThiruCherai", displayName: "Saranathan Perumal Temple", lat: 10.9313, lng: 79.2850, link: "https://www.google.com/maps/search/?api=1&query=Saranathan+Perumal+Temple,+Thirucherai" },
+            { name: "ThiruKannamangai", displayName: "Bhaktavatsala Perumal Temple", lat: 10.8583, lng: 79.0750, link: "https://www.google.com/maps/search/?api=1&query=Bhaktavatsala+Perumal+Temple,+Thirukannamangai" },
+            { name: "ThiruKannapuram", displayName: "Neelamegha Perumal Temple", lat: 10.8944, lng: 79.2197, link: "https://www.google.com/maps/search/?api=1&query=Neelamegha+Perumal+Temple,+Thirukannapuram" },
+            { name: "ThiruKannangudi", displayName: "Lokanantha Perumal Temple", lat: 10.3517, lng: 79.4183, link: "https://www.google.com/maps/search/?api=1&query=Lokanantha+Perumal+Temple,+Thirukannangudi" },
+            { name: "ThiruNaagai", displayName: "Soundararaja Temple, Nagapattinam", lat: 10.7660, lng: 79.8428, link: "https://www.google.com/maps/search/?api=1&query=Soundararajaperumal+Temple,+Nagapattinam" },
+            { name: "ThiruThanjai Maamani Kovil", displayName: "Thanjai Maamani Koil", lat: 10.7870, lng: 79.1378, link: "https://www.google.com/maps/search/?api=1&query=Thanjai+Maamani+Koil,+Thanjavur" },
+            { name: "ThiruNandipura Vinnagaram", displayName: "Nathan Kovil, Thanjavur", lat: 10.8150, lng: 79.1100, link: "https://www.google.com/maps/search/?api=1&query=Nathan+Kovil,+Jagannatha+Perumal,+Thanjavur" },
+            { name: "ThiruVelliyangudi", displayName: "Kola Valvilli Ramar Temple", lat: 10.5889, lng: 79.0972, link: "https://www.google.com/maps/search/?api=1&query=Kola+Valvilli+Ramar+Temple,+Thiruvelliyangudi" },
+            { name: "ThiruAzhundhur", displayName: "Devadiraja Perumal Temple", lat: 10.8800, lng: 79.2350, link: "https://www.google.com/maps/search/?api=1&query=Devadiraja+Perumal+Temple,+Therezhundur" },
+            { name: "ThiruChirupuliyoor", displayName: "Arulmaakadal Perumal Temple", lat: 11.3981, lng: 79.7064, link: "https://www.google.com/maps/search/?api=1&query=Arulmaakadal+Perumal+Temple,+Sirupuliyur" },
+            { name: "ThiruThalaichanganaanmadhiyam", displayName: "Naanmadhia Perumal Temple", lat: 11.1933, lng: 79.5500, link: "https://www.google.com/maps/search/?api=1&query=Naanmadhia+Perumal+Temple,+Thalaichangadu" },
+            { name: "ThiruIndhalur", displayName: "Parimala Ranganathar Temple", lat: 11.2350, lng: 79.6867, link: "https://www.google.com/maps/search/?api=1&query=Parimala+Ranganathar+Temple,+Mayiladuthurai" },
+            { name: "ThiruKavalambadi", displayName: "Gopalakrishna Perumal Temple", lat: 11.1670, lng: 79.4830, link: "https://www.google.com/maps/search/?api=1&query=Gopalakrishna+Perumal+Temple,+Thirukavalambadi" },
+            { name: "ThiruKaazhisrirama Vinnagaram", displayName: "Trivikrama Perumal Temple, Sirkazhi", lat: 11.2380, lng: 79.7340, link: "https://www.google.com/maps/search/?api=1&query=Trivikrama+Perumal+Temple,+Sirkazhi" },
+            { name: "ThiruArimeya Vinnagaram", displayName: "Kudamudakoothan Temple, Sirkazhi", lat: 11.2380, lng: 79.7340, link: "https://www.google.com/maps/search/?api=1&query=Kudamudakoothan+Perumal+Temple,+Sirkazhi" },
+            { name: "ThiruVanpurushothamam", displayName: "Purushothama Temple, Sirkazhi", lat: 11.2380, lng: 79.7340, link: "https://www.google.com/maps/search/?api=1&query=Purushothama+Perumal+Temple,+Sirkazhi" },
+            { name: "ThiruSemponsei Kovil", displayName: "Sempon Sei Arangar Temple", lat: 11.2380, lng: 79.7340, link: "https://www.google.com/maps/search/?api=1&query=Sempon+Sei+Arangar+Temple,+Sirkazhi" },
+            { name: "ThiruManimaada Kovil", displayName: "Narayana Temple, Thirumanimadam", lat: 11.2380, lng: 79.7340, link: "https://www.google.com/maps/search/?api=1&query=Narayana+Perumal+Temple,+Thirumanimadam,+Sirkazhi" },
+            { name: "ThiruVaikuntha Vinnagaram", displayName: "Vaikunda Natha Temple, Sirkazhi", lat: 11.2380, lng: 79.7340, link: "https://www.google.com/maps/search/?api=1&query=Vaikunda+Natha+Perumal+Temple,+Sirkazhi" },
+            { name: "ThiruAali", displayName: "Thiruvali Thirunagari Temples", lat: 11.2297, lng: 79.7486, link: "https://www.google.com/maps/search/?api=1&query=Thiruvali+Thirunagari+Temples" },
+            { name: "ThiruThevanaarthogai", displayName: "Deivanayaga Temple, Sirkazhi", lat: 11.2380, lng: 79.7340, link: "https://www.google.com/maps/search/?api=1&query=Deivanayaga+Perumal+Temple,+Sirkazhi" },
+            { name: "ThiruThetriyambalam", displayName: "Palli Konda Temple, Sirkazhi", lat: 11.2380, lng: 79.7340, link: "https://www.google.com/maps/search/?api=1&query=Palli+Konda+Perumal+Temple,+Sirkazhi" },
+            { name: "ThiruManikkoodam", displayName: "Varadharaja Temple, Thirumanikkoodam", lat: 11.2203, lng: 79.4547, link: "https://www.google.com/maps/search/?api=1&query=Varadharaja+Perumal+Temple,+Thirumanikkoodam" },
+            { name: "ThiruVellakkulam", displayName: "Srinivasa Temple, Thiruvellakkulam", lat: 11.2950, lng: 79.8325, link: "https://www.google.com/maps/search/?api=1&query=Srinivasa+Perumal+Temple,+Thiruvellakkulam" },
+            { name: "ThiruParthan Palli", displayName: "Thamaraiyal Kelvan Temple", lat: 11.2700, lng: 79.5500, link: "https://www.google.com/maps/search/?api=1&query=Thamaraiyal+Kelvan+Perumal+Temple,+Thirupparthanpalli" },
+            { name: "ThiruChithrakootam", displayName: "Govindaraja Temple, Chidambaram", lat: 11.3992, lng: 79.6935, link: "https://www.google.com/maps/search/?api=1&query=Govindaraja+Perumal+Temple,+Chidambaram" },
+            { name: "ThiruAheendrapuram", displayName: "Devanatha Temple, Thiruvahindrapuram", lat: 11.5125, lng: 79.6333, link: "https://www.google.com/maps/search/?api=1&query=Devanatha+Perumal+Temple,+Thiruvahindrapuram" },
+            { name: "ThiruKovalur", displayName: "Ulagalantha Temple, Tirukoyilur", lat: 11.9678, lng: 79.2042, link: "https://www.google.com/maps/search/?api=1&query=Ulagalantha+Perumal+Temple,+Tirukoyilur" },
+            { name: "ThiruKachchi", displayName: "Varadharaja Temple, Kanchipuram", lat: 12.8444, lng: 79.7098, link: "https://www.google.com/maps/search/?api=1&query=Varadharaja+Perumal+Temple,+Kanchipuram" },
+            { name: "ThiruAttabuyakaram", displayName: "Ashtabujakaram Temple, Kanchipuram", lat: 12.8372, lng: 79.7016, link: "https://www.google.com/maps/search/?api=1&query=Ashtabujakaram+Temple,+Kanchipuram" },
+            { name: "ThiruThankaa", displayName: "Vilakkoli Temple, Kanchipuram", lat: 12.8356, lng: 79.7014, link: "https://www.google.com/maps/search/?api=1&query=Vilakkoli+Perumal+Temple,+Kanchipuram" },
+            { name: "ThiruVelukkai", displayName: "Azhagiya Singar Temple, Kanchipuram", lat: 12.8430, lng: 79.7000, link: "https://www.google.com/maps/search/?api=1&query=Azhagiya+Singar+Perumal+Temple,+Kanchipuram" },
+            { name: "ThiruNeeragam", displayName: "Neeragathan Temple, Kanchipuram", lat: 12.8458, lng: 79.6994, link: "https://www.google.com/maps/search/?api=1&query=Neeragathan+Temple,+Ulagalantha+Perumal+Temple,+Kanchipuram" },
+            { name: "ThiruPaadagam", displayName: "Pandava Thoothar Temple, Kanchipuram", lat: 12.8426, lng: 79.7028, link: "https://www.google.com/maps/search/?api=1&query=Pandava+Thoothar+Perumal+Temple,+Kanchipuram" },
+            { name: "ThiruNilathingal Thundam", displayName: "Nilathingal Thundathan, Kanchipuram", lat: 12.8444, lng: 79.7041, link: "https://www.google.com/maps/search/?api=1&query=Nilathingal+Thundathan+Perumal+Sannidhi,+Kanchipuram" },
+            { name: "ThiruOoragam", displayName: "Ulagalantha Temple, Kanchipuram", lat: 12.8322, lng: 79.7136, link: "https://www.google.com/maps/search/?api=1&query=Ulagalantha+Perumal+Temple,+Kanchipuram" },
+            { name: "ThiruVeggaa", displayName: "Yathothkari Temple, Kanchipuram", lat: 12.8433, lng: 79.7044, link: "https://www.google.com/maps/search/?api=1&query=Yathothkari+Perumal+Temple,+Kanchipuram" },
+            { name: "ThiruKaragam", displayName: "Karunakara Temple, Kanchipuram", lat: 12.8369, lng: 79.7025, link: "https://www.google.com/maps/search/?api=1&query=Karunakara+Perumal+Temple,+Ulagalantha+Perumal+Temple,+Kanchipuram" },
+            { name: "ThiruKarvanam", displayName: "Karvanar Temple, Kanchipuram", lat: 12.8433, lng: 79.7022, link: "https://www.google.com/maps/search/?api=1&query=Karvanar+Temple,+Ulagalantha+Perumal+Temple,+Kanchipuram" },
+            { name: "ThiruKalvanur", displayName: "Kalvar Temple, Kanchipuram", lat: 12.8426, lng: 79.7031, link: "https://www.google.com/maps/search/?api=1&query=Kalvar+Perumal+Sannidhi,+Kamakshi+Amman+Temple,+Kanchipuram" },
+            { name: "ThiruPavalavannam", displayName: "Pavalavannar Temple, Kanchipuram", lat: 12.8353, lng: 79.7016, link: "https://www.google.com/maps/search/?api=1&query=Pavalavannar+Temple,+Kanchipuram" },
+            { name: "ThiruParameswara Vinnagaram", displayName: "Vaikunta Temple, Kanchipuram", lat: 12.8422, lng: 79.7022, link: "https://www.google.com/maps/search/?api=1&query=Vaikunta+Perumal+Temple,+Kanchipuram" },
+            { name: "ThiruPutkuzhi", displayName: "Vijayaraghava Temple, Thiruputkuzhi", lat: 12.7628, lng: 79.8061, link: "https://www.google.com/maps/search/?api=1&query=Vijayaraghava+Perumal+Temple,+Thiruputkuzhi" },
+            { name: "ThiruNindravur", displayName: "Bhakthavatsala Temple, Thirunindravur", lat: 13.1186, lng: 80.0269, link: "https://www.google.com/maps/search/?api=1&query=Bhakthavatsala+Perumal+Temple,+Thirunindravur" },
+            { name: "ThiruEvvul", displayName: "Veeraraghava Temple, Thiruvallur", lat: 13.2544, lng: 80.0087, link: "https://www.google.com/maps/search/?api=1&query=Veeraraghava+Perumal+Temple,+Thiruvallur" },
+            { name: "ThiruAllikkeni", displayName: "Parthasarathy Temple, Chennai", lat: 13.0538, lng: 80.2757, link: "https://www.google.com/maps/search/?api=1&query=Parthasarathy+Temple,+Thiruvallikeni,+Chennai" },
+            { name: "ThiruNeermalai", displayName: "Neervanna Temple, Thiruneermalai", lat: 12.9686, lng: 80.1200, link: "https://www.google.com/maps/search/?api=1&query=Neervanna+Perumal+Temple,+Thiruneermalai" },
+            { name: "ThiruIdaventhai", displayName: "Nithya Kalyana Temple, Thiruvidanthai", lat: 12.5431, lng: 80.1036, link: "https://www.google.com/maps/search/?api=1&query=Nithya+Kalyana+Perumal+Temple,+Thiruvidanthai" },
+            { name: "ThiruKadanmallai", displayName: "Sthalasayana Temple, Mahabalipuram", lat: 12.6269, lng: 80.1860, link: "https://www.google.com/maps/search/?api=1&query=Sthalasayana+Perumal+Temple,+Mahabalipuram" },
+            { name: "ThiruKadigai", displayName: "Yoga Narasimha Temple, Sholinghur", lat: 13.2486, lng: 79.4200, link: "https://www.google.com/maps/search/?api=1&query=Yoga+Narasimha+Swamy+Temple,+Sholinghur" },
+            { name: "ThiruAyodhi", displayName: "Ram Janmabhoomi, Ayodhya", lat: 26.7956, lng: 82.1949, link: "https://www.google.com/maps/search/?api=1&query=Ayodhya,+Uttar+Pradesh" },
+            { name: "ThiruNaimisaranyam", displayName: "Naimisaranya", lat: 27.1287, lng: 80.5308, link: "https://www.google.com/maps/search/?api=1&query=Naimisaranya,+Uttar+Pradesh" },
+            { name: "ThiruPiruthi", displayName: "Nandaprayag", lat: 30.3286, lng: 79.3269, link: "https://www.google.com/maps/search/?api=1&query=Nandaprayag,+Uttarakhand" },
+            { name: "ThiruKandamennum Kadinagar", displayName: "Devprayag", lat: 30.1461, lng: 78.5989, link: "https://www.google.com/maps/search/?api=1&query=Devprayag,+Uttarakhand" },
+            { name: "ThiruVadari", displayName: "Badrinath Temple", lat: 30.7433, lng: 79.4938, link: "https://www.google.com/maps/search/?api=1&query=Badrinath+Temple,+Uttarakhand" },
+            { name: "ThiruSalagraamam", displayName: "Muktinath Temple, Nepal", lat: 28.8203, lng: 83.8708, link: "https://www.google.com/maps/search/?api=1&query=Muktinath+Temple,+Nepal" },
+            { name: "ThiruVada Madurai", displayName: "Krishna Janmasthan, Mathura", lat: 27.5036, lng: 77.6739, link: "https://www.google.com/maps/search/?api=1&query=Mathura,+Uttar+Pradesh" },
+            { name: "ThiruAyppaadi", displayName: "Gokul", lat: 27.4425, lng: 77.7211, link: "https://www.google.com/maps/search/?api=1&query=Gokul,+Uttar+Pradesh" },
+            { name: "ThiruThuvarai", displayName: "Dwarkadhish Temple, Dwarka", lat: 22.2376, lng: 68.9674, link: "https://www.google.com/maps/search/?api=1&query=Dwarkadhish+Temple,+Dwarka,+Gujarat" },
+            { name: "ThiruSingavelkundram", displayName: "Ahobilam", lat: 15.1342, lng: 78.6742, link: "https://www.google.com/maps/search/?api=1&query=Ahobilam,+Andhra+Pradesh" },
+            { name: "ThiruVenkatam", displayName: "Venkateswara Temple, Tirumala", lat: 13.6833, lng: 79.3473, link: "https://www.google.com/maps/search/?api=1&query=Venkateswara+Temple,+Tirumala,+Andhra+Pradesh" },
+            { name: "ThiruNaavaai", displayName: "Navamukunda Temple, Tirunavaya", lat: 10.8833, lng: 75.9500, link: "https://www.google.com/maps/search/?api=1&query=Navamukunda+Temple,+Tirunavaya,+Kerala" },
+            { name: "ThiruViththuvakkodu", displayName: "Uyyavantha Temple, Thiruvithuvacode", lat: 10.9456, lng: 76.0739, link: "https://www.google.com/maps/search/?api=1&query=Uyyavantha+Perumal+Temple,+Thiruvithuvacode,+Kerala" },
+            { name: "ThiruKaatkarai", displayName: "Thrikkakara Vamana Temple", lat: 10.0167, lng: 76.3333, link: "https://www.google.com/maps/search/?api=1&query=Thrikkakara+Vamana+Moorthy+Temple,+Kerala" },
+            { name: "ThiruMoozhikkalam", displayName: "Moozhikkulam Lakshmana Temple", lat: 10.1422, lng: 76.3083, link: "https://www.google.com/maps/search/?api=1&query=Moozhikkulam+Lakshmana+Perumal+Temple,+Kerala" },
+            { name: "ThiruVallavaazh", displayName: "Sreevallabha Temple, Tiruvalla", lat: 9.3853, lng: 76.5750, link: "https://www.google.com/maps/search/?api=1&query=Sreevallabha+Temple,+Tiruvalla,+Kerala" },
+            { name: "ThiruKadithaanam", displayName: "Thrikodithanam Mahavishnu Temple", lat: 9.4939, lng: 76.5972, link: "https://www.google.com/maps/search/?api=1&query=Thrikodithanam+Mahavishnu+Temple,+Kerala" },
+            { name: "ThiruChenkundrur", displayName: "Imayavarappan Temple, Chengannur", lat: 9.3156, lng: 76.6156, link: "https://www.google.com/maps/search/?api=1&query=Imayavarappan+Perumal+Temple,+Chengannur,+Kerala" },
+            { name: "ThiruPuliyur", displayName: "Thirupuliyur Mahavishnu Temple", lat: 9.1750, lng: 76.7167, link: "https://www.google.com/maps/search/?api=1&query=Thirupuliyur+Mahavishnu+Temple,+Kerala" },
+            { name: "ThiruVaaranvilai", displayName: "Aranmula Parthasarathy Temple", lat: 9.3347, lng: 76.6222, link: "https://www.google.com/maps/search/?api=1&query=Aranmula+Parthasarathy+Temple,+Kerala" },
+            { name: "ThiruVanvandur", displayName: "Thiruvanvandoor Mahavishnu Temple", lat: 9.2167, lng: 76.7000, link: "https://www.google.com/maps/search/?api=1&query=Thiruvanvandoor+Mahavishnu+Temple,+Kerala" },
+            { name: "ThiruAnanthapuram", displayName: "Padmanabhaswamy Temple, Thiruvananthapuram", lat: 8.4828, lng: 76.9436, link: "https://www.google.com/maps/search/?api=1&query=Padmanabhaswamy+Temple,+Thiruvananthapuram,+Kerala" },
+            { name: "ThiruVaattaaru", displayName: "Adikesava Temple, Thiruvattar", lat: 8.2575, lng: 77.2625, link: "https://www.google.com/maps/search/?api=1&query=Adikesava+Perumal+Temple,+Thiruvattar,+Tamil+Nadu" },
+            { name: "ThiruVannparisaaram", displayName: "Thiruvazhmarban Temple, Thirupathisaram", lat: 8.3489, lng: 77.3589, link: "https://www.google.com/maps/search/?api=1&query=Thiruvazhmarban+Temple,+Thirupathisaram,+Tamil+Nadu" },
+            { name: "ThiruKurungudi", displayName: "Azhagiya Nambi Temple, Thirukkurungudi", lat: 8.3503, lng: 77.6511, link: "https://www.google.com/maps/search/?api=1&query=Azhagiya+Nambi+Perumal+Temple,+Thirukkurungudi" },
+            { name: "ThiruChireevaramangai", displayName: "Vanamamalai Temple, Nanguneri", lat: 8.4931, lng: 77.6731, link: "https://www.google.com/maps/search/?api=1&query=Vanamamalai+Perumal+Temple,+Nanguneri" },
+            { name: "ThiruVaikuntam", displayName: "Nava Tirupathi, Srivaikuntam", lat: 8.6344, lng: 77.9128, link: "https://www.google.com/maps/search/?api=1&query=Nava+Tirupathi,+Srivaikuntam,+Thoothukudi" },
+            { name: "ThiruVaragunamangai", displayName: "Nava Tirupathi - Varagunamangai", lat: 8.6189, lng: 77.9292, link: "https://www.google.com/maps/search/?api=1&query=Nava+Tirupathi,+Srivaikuntam,+Thoothukudi" },
+            { name: "ThiruPulingudi", displayName: "Nava Tirupathi - Pulingudi", lat: 8.6133, lng: 77.8950, link: "https://www.google.com/maps/search/?api=1&query=Nava+Tirupathi,+Srivaikuntam,+Thoothukudi" },
+            { name: "ThiruThulaivillimangalam", displayName: "Nava Tirupathi - Thulaivillimangalam", lat: 8.5644, lng: 77.8472, link: "https://www.google.com/maps/search/?api=1&query=Nava+Tirupathi,+Srivaikuntam,+Thoothukudi" },
+            { name: "ThiruKulandhai", displayName: "Nava Tirupathi - Kulandhai", lat: 8.6044, lng: 77.8672, link: "https://www.google.com/maps/search/?api=1&query=Nava+Tirupathi,+Srivaikuntam,+Thoothukudi" },
+            { name: "ThiruKolur", displayName: "Nava Tirupathi - Kolur", lat: 8.6544, lng: 77.9072, link: "https://www.google.com/maps/search/?api=1&query=Nava+Tirupathi,+Srivaikuntam,+Thoothukudi" },
+            { name: "ThiruPerai", displayName: "Nava Tirupathi - Perai", lat: 8.5844, lng: 77.8172, link: "https://www.google.com/maps/search/?api=1&query=Nava+Tirupathi,+Srivaikuntam,+Thoothukudi" },
+            { name: "ThiruKurugur", displayName: "Nava Tirupathi - Alwarthirunagari", lat: 8.6044, lng: 77.9572, link: "https://www.google.com/maps/search/?api=1&query=Nava+Tirupathi,+Alwarthirunagari,+Thoothukudi" },
+            { name: "ThiruVilliputhur", displayName: "Srivilliputhur Andal Temple", lat: 9.5072, lng: 77.6336, link: "https://www.google.com/maps/search/?api=1&query=Srivilliputhur+Andal+Temple" },
+            { name: "ThiruThankaal", displayName: "Ninra Narayana Temple, Thiruthangal", lat: 9.4847, lng: 77.8300, link: "https://www.google.com/maps/search/?api=1&query=Ninra+Narayana+Perumal+Temple,+Thiruthangal" },
+            { name: "ThiruKudal", displayName: "Koodal Azhagar Temple, Madurai", lat: 9.9252, lng: 78.1198, link: "https://www.google.com/maps/search/?api=1&query=Koodal+Azhagar+Temple,+Madurai" },
+            { name: "ThiruMaaliruncholai", displayName: "Alagar Kovil, Madurai", lat: 10.2333, lng: 78.2167, link: "https://www.google.com/maps/search/?api=1&query=Alagar+Kovil,+Madurai" },
+            { name: "ThiruMogur", displayName: "Kalamega Temple, Thirumohur", lat: 10.0044, lng: 78.0203, link: "https://www.google.com/maps/search/?api=1&query=Kalamega+Perumal+Temple,+Thirumohur" },
+            { name: "ThiruKottiyur", displayName: "Sowmya Narayana Temple, Thirukoshtiyur", lat: 9.5233, lng: 78.0183, link: "https://www.google.com/maps/search/?api=1&query=Sowmya+Narayana+Perumal+Temple,+Thirukoshtiyur" },
+            { name: "ThiruPullaani", displayName: "Adi Jagannatha Temple, Thiruppullani", lat: 9.2747, lng: 78.9256, link: "https://www.google.com/maps/search/?api=1&query=Adi+Jagannatha+Perumal+Temple,+Thiruppullani" },
+            { name: "ThiruMeyyam", displayName: "Sathyamurthi Temple, Thirumayam", lat: 10.2472, lng: 78.7489, link: "https://www.google.com/maps/search/?api=1&query=Sathyamurthi+Perumal+Temple,+Thirumayam" }
+        ];
+
+        let userLocation = null;
+        let nearestTemples = [];
+
+        function findNearestTemples() {
+            const button = document.querySelector('.btn-locate');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            
+            button.disabled = true;
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('filterSection').style.display = 'none';
+            document.getElementById('currentLocation').style.display = 'none';
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        calculateDistances();
+                        displayResults();
+                        loading.style.display = 'none';
+                        button.disabled = false;
+                    },
+                    err => {
+                        loading.style.display = 'none';
+                        error.style.display = 'block';
+                        let errorMessage = '❌ ';
+                        switch(err.code) {
+                            case err.PERMISSION_DENIED:
+                                errorMessage += 'Location access denied. Please enable location services.<br><br>';
+                                errorMessage += '<strong>Alternative:</strong> Enter your location manually below or try one of these hosting options:<br>';
+                                errorMessage += '• Upload to GitHub Pages (free)<br>';
+                                errorMessage += '• Upload to Netlify (free)<br>';
+                                errorMessage += '• Use a local HTTPS server<br><br>';
+                                errorMessage += 'Or use the manual location input below:';
+                                break;
+                            case err.POSITION_UNAVAILABLE:
+                                errorMessage += 'Location information unavailable.';
+                                break;
+                            case err.TIMEOUT:
+                                errorMessage += 'Location request timed out.';
+                                break;
+                            default:
+                                errorMessage += 'An unknown error occurred.';
+                        }
+                        error.innerHTML = errorMessage;
+                        showManualInput();
+                        button.disabled = false;
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                error.innerHTML = '❌ Geolocation is not supported by your browser.<br>Please use the manual location input below:';
+                showManualInput();
+                button.disabled = false;
+            }
+        }
+
+        function showManualInput() {
+            const manualInput = document.getElementById('manualLocationInput');
+            if (manualInput) {
+                manualInput.style.display = 'block';
+            }
+        }
+
+        function useManualLocation() {
+            const lat = parseFloat(document.getElementById('manualLat').value);
+            const lng = parseFloat(document.getElementById('manualLng').value);
+            
+            if (isNaN(lat) || isNaN(lng)) {
+                alert('Please enter valid latitude and longitude values');
+                return;
+            }
+            
+            if (lat < -90 || lat > 90) {
+                alert('Latitude must be between -90 and 90');
+                return;
+            }
+            
+            if (lng < -180 || lng > 180) {
+                alert('Longitude must be between -180 and 180');
+                return;
+            }
+            
+            userLocation = { lat, lng };
+            calculateDistances();
+            displayResults();
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('manualLocationInput').style.display = 'none';
+        }
+
+        function usePresetLocation(lat, lng, name) {
+            userLocation = { lat, lng };
+            calculateDistances();
+            displayResults();
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('manualLocationInput').style.display = 'none';
+            
+            // Update current location display
+            const currentLocationDiv = document.getElementById('currentLocation');
+            currentLocationDiv.innerHTML = `
+                <strong>📍 Location:</strong> ${name} (${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E)
+            `;
+        }
+
+        function calculateDistances() {
+            nearestTemples = divyaDesams.map(temple => {
+                const distance = calculateDistance(
+                    userLocation.lat,
+                    userLocation.lng,
+                    temple.lat,
+                    temple.lng
+                );
+                return { ...temple, distance };
+            }).sort((a, b) => a.distance - b.distance);
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of Earth in km
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI/180);
+        }
+
+        function displayResults() {
+            const resultsDiv = document.getElementById('results');
+            const filterSection = document.getElementById('filterSection');
+            const currentLocationDiv = document.getElementById('currentLocation');
+            const count = parseInt(document.getElementById('resultCount')?.value || 10);
+            
+            // Show current location
+            currentLocationDiv.innerHTML = `
+                <strong>📍 Your Location:</strong> ${userLocation.lat.toFixed(4)}°N, ${userLocation.lng.toFixed(4)}°E
+            `;
+            currentLocationDiv.style.display = 'block';
+            
+            // Show filter section
+            filterSection.style.display = 'block';
+            
+            // Display temples
+            resultsDiv.innerHTML = '';
+            const templesList = nearestTemples.slice(0, count);
+            
+            templesList.forEach((temple, index) => {
+                const templeCard = document.createElement('div');
+                templeCard.className = 'temple-card';
+                templeCard.style.animationDelay = `${index * 0.1}s`;
+                
+                templeCard.innerHTML = `
+                    <div class="temple-name">${index + 1}. ${temple.displayName}</div>
+                    <div class="temple-distance">
+                        <strong>${temple.distance.toFixed(1)} km</strong> away
+                    </div>
+                    <a href="${temple.link}" target="_blank" class="btn-navigate">
+                        🗺️ Navigate
+                    </a>
+                `;
+                
+                resultsDiv.appendChild(templeCard);
+            });
+            
+            resultsDiv.style.display = 'block';
+        }
+
+        function updateResults() {
+            if (userLocation && nearestTemples.length > 0) {
+                displayResults();
+            }
+        }
+    </script>
+</body>
+</html>
