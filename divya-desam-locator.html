@@ -171,6 +171,165 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
+        .route-planner {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .route-planner h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .route-inputs {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .route-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .route-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .route-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-plan-route {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-plan-route:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+        }
+
+        .route-results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 4px solid #38ef7d;
+        }
+
+        .route-summary {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .detour-slider {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 5px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .btn-view-route {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            margin-top: 15px;
+        }
+
+        .btn-view-route:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(17, 153, 142, 0.3);
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
         .filter-label {
             display: block;
             margin-bottom: 10px;
@@ -248,68 +407,114 @@
             <p>Find the nearest sacred Vishnu temples from your location</p>
         </div>
 
-        <div class="location-card">
-            <button class="btn-locate" onclick="findNearestTemples()">
-                📍 Find Nearest Divya Desams
-            </button>
-            
-            <div class="loading" id="loading" style="display:none;">
-                <div class="loading-spinner"></div>
-                <p>Locating nearest temples...</p>
-            </div>
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchTab('nearby')">📍 Nearby Temples</button>
+            <button class="tab-btn" onclick="switchTab('route')">🗺️ Route Planner</button>
+        </div>
 
-            <div class="error" id="error" style="display:none;"></div>
-            
-            <div id="manualLocationInput" style="display:none; margin-top: 20px;">
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 4px solid #667eea;">
-                    <h3 style="margin-bottom: 15px; color: #333;">Manual Location Entry</h3>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <h4 style="color: #667eea; margin-bottom: 10px;">Quick Select Major Cities:</h4>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
-                            <button onclick="usePresetLocation(13.0827, 80.2707, 'Chennai')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Chennai</button>
-                            <button onclick="usePresetLocation(9.9252, 78.1198, 'Madurai')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Madurai</button>
-                            <button onclick="usePresetLocation(11.0168, 76.9558, 'Coimbatore')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Coimbatore</button>
-                            <button onclick="usePresetLocation(10.7870, 79.1378, 'Thanjavur')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Thanjavur</button>
-                            <button onclick="usePresetLocation(10.8505, 78.6967, 'Trichy')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Trichy</button>
-                            <button onclick="usePresetLocation(10.9597, 79.3779, 'Kumbakonam')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Kumbakonam</button>
-                            <button onclick="usePresetLocation(12.9716, 77.5946, 'Bangalore')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Bangalore</button>
-                            <button onclick="usePresetLocation(17.3850, 78.4867, 'Hyderabad')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Hyderabad</button>
-                            <button onclick="usePresetLocation(8.5241, 76.9366, 'Trivandrum')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Trivandrum</button>
-                            <button onclick="usePresetLocation(28.6139, 77.2090, 'Delhi')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Delhi</button>
+        <div id="nearbyTab" class="tab-content active">
+            <div class="location-card">
+                <button class="btn-locate" onclick="findNearestTemples()">
+                    📍 Find Nearest Divya Desams
+                </button>
+                
+                <div class="loading" id="loading" style="display:none;">
+                    <div class="loading-spinner"></div>
+                    <p>Locating nearest temples...</p>
+                </div>
+
+                <div class="error" id="error" style="display:none;"></div>
+                
+                <div id="manualLocationInput" style="display:none; margin-top: 20px;">
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 4px solid #667eea;">
+                        <h3 style="margin-bottom: 15px; color: #333;">Manual Location Entry</h3>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <h4 style="color: #667eea; margin-bottom: 10px;">Quick Select Major Cities:</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                                <button onclick="usePresetLocation(13.0827, 80.2707, 'Chennai')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Chennai</button>
+                                <button onclick="usePresetLocation(9.9252, 78.1198, 'Madurai')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Madurai</button>
+                                <button onclick="usePresetLocation(11.0168, 76.9558, 'Coimbatore')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Coimbatore</button>
+                                <button onclick="usePresetLocation(10.7870, 79.1378, 'Thanjavur')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Thanjavur</button>
+                                <button onclick="usePresetLocation(10.8505, 78.6967, 'Trichy')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Trichy</button>
+                                <button onclick="usePresetLocation(10.9597, 79.3779, 'Kumbakonam')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Kumbakonam</button>
+                                <button onclick="usePresetLocation(12.9716, 77.5946, 'Bangalore')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Bangalore</button>
+                                <button onclick="usePresetLocation(17.3850, 78.4867, 'Hyderabad')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Hyderabad</button>
+                                <button onclick="usePresetLocation(8.5241, 76.9366, 'Trivandrum')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Trivandrum</button>
+                                <button onclick="usePresetLocation(28.6139, 77.2090, 'Delhi')" style="padding: 8px; background: white; border: 2px solid #667eea; border-radius: 8px; cursor: pointer;">Delhi</button>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div style="margin-bottom: 10px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Or enter coordinates manually:</label>
-                        <input type="number" id="manualLat" placeholder="Latitude (e.g., 13.0827)" step="0.0001" min="-90" max="90" style="width: 48%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; margin-right: 2%;">
-                        <input type="number" id="manualLng" placeholder="Longitude (e.g., 80.2707)" step="0.0001" min="-180" max="180" style="width: 48%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
-                    </div>
-                    
-                    <button onclick="useManualLocation()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 30px; border-radius: 25px; cursor: pointer; margin-top: 10px;">
-                        Use This Location
-                    </button>
-                    
-                    <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 8px;">
-                        <small><strong>Tip:</strong> You can find your coordinates on Google Maps by right-clicking any location and selecting "What's here?"</small>
+                        
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500;">Or enter coordinates manually:</label>
+                            <input type="number" id="manualLat" placeholder="Latitude (e.g., 13.0827)" step="0.0001" min="-90" max="90" style="width: 48%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; margin-right: 2%;">
+                            <input type="number" id="manualLng" placeholder="Longitude (e.g., 80.2707)" step="0.0001" min="-180" max="180" style="width: 48%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                        </div>
+                        
+                        <button onclick="useManualLocation()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 30px; border-radius: 25px; cursor: pointer; margin-top: 10px;">
+                            Use This Location
+                        </button>
+                        
+                        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 8px;">
+                            <small><strong>Tip:</strong> You can find your coordinates on Google Maps by right-clicking any location and selecting "What's here?"</small>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <div class="filter-section" id="filterSection" style="display:none;">
+                <label class="filter-label">Show top:</label>
+                <select class="filter-input" id="resultCount" onchange="updateResults()">
+                    <option value="5">5 temples</option>
+                    <option value="10" selected>10 temples</option>
+                    <option value="20">20 temples</option>
+                    <option value="108">All 106 temples</option>
+                </select>
+            </div>
+
+            <div class="current-location" id="currentLocation" style="display:none;"></div>
+
+            <div class="results" id="results"></div>
         </div>
 
-        <div class="filter-section" id="filterSection" style="display:none;">
-            <label class="filter-label">Show top:</label>
-            <select class="filter-input" id="resultCount" onchange="updateResults()">
-                <option value="5">5 temples</option>
-                <option value="10" selected>10 temples</option>
-                <option value="20">20 temples</option>
-                <option value="108">All 106 temples</option>
-            </select>
+        <div id="routeTab" class="tab-content">
+            <div class="route-planner">
+                <h2>🗺️ Plan Your Divya Desam Route</h2>
+                <p style="color: #666; margin-bottom: 20px;">Enter your start and end points to find Divya Desams along your route</p>
+                
+                <div class="route-inputs">
+                    <div class="route-input-group">
+                        <span style="font-size: 1.5rem;">📍</span>
+                        <input type="text" id="startPoint" class="route-input" placeholder="Start point (e.g., Chennai, Tamil Nadu)">
+                    </div>
+                    <div class="route-input-group">
+                        <span style="font-size: 1.5rem;">🏁</span>
+                        <input type="text" id="endPoint" class="route-input" placeholder="End point (e.g., Madurai, Tamil Nadu)">
+                    </div>
+                </div>
+
+                <div class="detour-slider">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 500;">
+                        Maximum detour distance: <span id="detourValue">25</span> km
+                    </label>
+                    <input type="range" id="detourRange" class="slider" min="5" max="100" value="25" oninput="updateDetourValue(this.value)">
+                    <small style="color: #666;">Adjust to include temples within this distance from your route</small>
+                </div>
+
+                <button class="btn-plan-route" onclick="planRoute()">
+                    🛕 Find Temples Along Route
+                </button>
+
+                <div id="routeLoading" style="display:none; text-align: center; padding: 20px;">
+                    <div class="loading-spinner"></div>
+                    <p>Planning your spiritual journey...</p>
+                </div>
+
+                <div id="routeError" style="display:none;" class="error"></div>
+
+                <div id="routeResults" style="display:none;"></div>
+            </div>
         </div>
-
-        <div class="current-location" id="currentLocation" style="display:none;"></div>
-
-        <div class="results" id="results"></div>
     </div>
 
     <script>
@@ -425,6 +630,245 @@
 
         let userLocation = null;
         let nearestTemples = [];
+        let routeTemples = [];
+
+        function switchTab(tab) {
+            const tabs = document.querySelectorAll('.tab-content');
+            const buttons = document.querySelectorAll('.tab-btn');
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            buttons.forEach(b => b.classList.remove('active'));
+            
+            if (tab === 'nearby') {
+                document.getElementById('nearbyTab').classList.add('active');
+                buttons[0].classList.add('active');
+            } else {
+                document.getElementById('routeTab').classList.add('active');
+                buttons[1].classList.add('active');
+            }
+        }
+
+        function updateDetourValue(value) {
+            document.getElementById('detourValue').textContent = value;
+        }
+
+        async function geocodeLocation(location) {
+            // Since we can't use Google's Geocoding API without an API key,
+            // we'll use a simple matching system for common locations
+            const commonLocations = {
+                'chennai': { lat: 13.0827, lng: 80.2707 },
+                'madurai': { lat: 9.9252, lng: 78.1198 },
+                'coimbatore': { lat: 11.0168, lng: 76.9558 },
+                'thanjavur': { lat: 10.7870, lng: 79.1378 },
+                'trichy': { lat: 10.8505, lng: 78.6967 },
+                'tiruchirappalli': { lat: 10.8505, lng: 78.6967 },
+                'kumbakonam': { lat: 10.9597, lng: 79.3779 },
+                'bangalore': { lat: 12.9716, lng: 77.5946 },
+                'bengaluru': { lat: 12.9716, lng: 77.5946 },
+                'hyderabad': { lat: 17.3850, lng: 78.4867 },
+                'trivandrum': { lat: 8.5241, lng: 76.9366 },
+                'thiruvananthapuram': { lat: 8.5241, lng: 76.9366 },
+                'delhi': { lat: 28.6139, lng: 77.2090 },
+                'new delhi': { lat: 28.6139, lng: 77.2090 },
+                'kanchipuram': { lat: 12.8444, lng: 79.7098 },
+                'srirangam': { lat: 10.8620, lng: 78.6960 },
+                'tirunelveli': { lat: 8.7139, lng: 77.7567 },
+                'rameswaram': { lat: 9.2885, lng: 79.3129 },
+                'kanyakumari': { lat: 8.0883, lng: 77.5385 },
+                'vellore': { lat: 12.9165, lng: 79.1325 },
+                'salem': { lat: 11.6643, lng: 78.1460 },
+                'erode': { lat: 11.3410, lng: 77.7172 },
+                'tirupati': { lat: 13.6288, lng: 79.4192 },
+                'vijayawada': { lat: 16.5062, lng: 80.6480 },
+                'visakhapatnam': { lat: 17.6868, lng: 83.2185 },
+                'kochi': { lat: 9.9312, lng: 76.2673 },
+                'cochin': { lat: 9.9312, lng: 76.2673 },
+                'kozhikode': { lat: 11.2588, lng: 75.7804 },
+                'calicut': { lat: 11.2588, lng: 75.7804 },
+                'mysore': { lat: 12.2958, lng: 76.6394 },
+                'mysuru': { lat: 12.2958, lng: 76.6394 },
+                'mangalore': { lat: 12.9141, lng: 74.8560 },
+                'mangaluru': { lat: 12.9141, lng: 74.8560 },
+                'puducherry': { lat: 11.9416, lng: 79.8083 },
+                'pondicherry': { lat: 11.9416, lng: 79.8083 },
+                'nagapattinam': { lat: 10.7660, lng: 79.8428 },
+                'chidambaram': { lat: 11.3992, lng: 79.6935 },
+                'mayiladuthurai': { lat: 11.2350, lng: 79.6867 },
+                'sirkazhi': { lat: 11.2380, lng: 79.7340 },
+                'tiruvallur': { lat: 13.2544, lng: 80.0087 },
+                'mahabalipuram': { lat: 12.6269, lng: 80.1860 },
+                'dwarka': { lat: 22.2376, lng: 68.9674 },
+                'mathura': { lat: 27.5036, lng: 77.6739 },
+                'ayodhya': { lat: 26.7956, lng: 82.1949 },
+                'badrinath': { lat: 30.7433, lng: 79.4938 },
+                'haridwar': { lat: 29.9457, lng: 78.1642 },
+                'rishikesh': { lat: 30.0869, lng: 78.2676 }
+            };
+            
+            const normalized = location.toLowerCase().trim().replace(/[,\s]+.*$/, '');
+            
+            if (commonLocations[normalized]) {
+                return commonLocations[normalized];
+            }
+            
+            // Check if it's a coordinate pair
+            const coordMatch = location.match(/(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
+            if (coordMatch) {
+                return { lat: parseFloat(coordMatch[1]), lng: parseFloat(coordMatch[2]) };
+            }
+            
+            return null;
+        }
+
+        function getPointsAlongRoute(start, end, numPoints = 10) {
+            // Create intermediate points along the route for checking nearby temples
+            const points = [];
+            for (let i = 0; i <= numPoints; i++) {
+                const fraction = i / numPoints;
+                points.push({
+                    lat: start.lat + (end.lat - start.lat) * fraction,
+                    lng: start.lng + (end.lng - start.lng) * fraction
+                });
+            }
+            return points;
+        }
+
+        function findTemplesAlongRoute(start, end, maxDetour) {
+            const routePoints = getPointsAlongRoute(start, end, 20);
+            const templesNearRoute = new Map();
+            
+            divyaDesams.forEach(temple => {
+                let minDistance = Infinity;
+                let closestPointOnRoute = null;
+                
+                // Find the closest point on the route to this temple
+                routePoints.forEach(point => {
+                    const distance = calculateDistance(point.lat, point.lng, temple.lat, temple.lng);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestPointOnRoute = point;
+                    }
+                });
+                
+                // If temple is within detour distance, add it
+                if (minDistance <= maxDetour) {
+                    const distanceFromStart = calculateDistance(start.lat, start.lng, temple.lat, temple.lng);
+                    templesNearRoute.set(temple.name, {
+                        ...temple,
+                        detourDistance: minDistance,
+                        distanceFromStart: distanceFromStart,
+                        closestRoutePoint: closestPointOnRoute
+                    });
+                }
+            });
+            
+            // Sort by distance from start point
+            return Array.from(templesNearRoute.values()).sort((a, b) => a.distanceFromStart - b.distanceFromStart);
+        }
+
+        async function planRoute() {
+            const startInput = document.getElementById('startPoint').value;
+            const endInput = document.getElementById('endPoint').value;
+            const detourDistance = parseInt(document.getElementById('detourRange').value);
+            
+            if (!startInput || !endInput) {
+                alert('Please enter both start and end points');
+                return;
+            }
+            
+            document.getElementById('routeLoading').style.display = 'block';
+            document.getElementById('routeError').style.display = 'none';
+            document.getElementById('routeResults').style.display = 'none';
+            
+            try {
+                const startCoords = await geocodeLocation(startInput);
+                const endCoords = await geocodeLocation(endInput);
+                
+                if (!startCoords || !endCoords) {
+                    throw new Error('Could not find one or both locations. Try using city names from the preset list or enter coordinates (lat,lng).');
+                }
+                
+                routeTemples = findTemplesAlongRoute(startCoords, endCoords, detourDistance);
+                
+                displayRouteResults(startInput, endInput, startCoords, endCoords, routeTemples, detourDistance);
+                
+            } catch (error) {
+                document.getElementById('routeError').style.display = 'block';
+                document.getElementById('routeError').innerHTML = '❌ ' + error.message;
+            } finally {
+                document.getElementById('routeLoading').style.display = 'none';
+            }
+        }
+
+        function displayRouteResults(startName, endName, startCoords, endCoords, temples, maxDetour) {
+            const resultsDiv = document.getElementById('routeResults');
+            const routeDistance = calculateDistance(startCoords.lat, startCoords.lng, endCoords.lat, endCoords.lng);
+            
+            let html = `
+                <div class="route-summary">
+                    <h3>📍 Route: ${startName} → ${endName}</h3>
+                    <p>Direct distance: <strong>${routeDistance.toFixed(1)} km</strong></p>
+                    <p>Divya Desams within ${maxDetour} km of route: <strong>${temples.length} temples</strong></p>
+                </div>
+            `;
+            
+            if (temples.length === 0) {
+                html += `
+                    <div style="padding: 20px; background: #fff3cd; border-radius: 10px; text-align: center;">
+                        <p>No Divya Desams found within ${maxDetour} km of this route.</p>
+                        <p>Try increasing the detour distance or choosing a different route.</p>
+                    </div>
+                `;
+            } else {
+                // Create Google Maps URL with waypoints
+                const waypoints = temples.slice(0, 9).map(t => `${t.lat},${t.lng}`).join('|');
+                const mapsUrl = `https://www.google.com/maps/dir/${startCoords.lat},${startCoords.lng}/${waypoints}/${endCoords.lat},${endCoords.lng}`;
+                
+                html += `
+                    <a href="${mapsUrl}" target="_blank" class="btn-view-route">
+                        🗺️ View Complete Route in Google Maps
+                    </a>
+                    
+                    <h3 style="margin-top: 30px; margin-bottom: 20px; color: #667eea;">
+                        🛕 Temples Along Your Route (in order):
+                    </h3>
+                `;
+                
+                temples.forEach((temple, index) => {
+                    const templeUrl = temple.link;
+                    html += `
+                        <div class="temple-card" style="animation-delay: ${index * 0.1}s;">
+                            <div class="temple-name">${index + 1}. ${temple.displayName}</div>
+                            <div class="temple-distance">
+                                <strong>${temple.detourDistance.toFixed(1)} km</strong> detour from route
+                                <br>
+                                <span style="color: #999; font-size: 0.9rem;">
+                                    ${temple.distanceFromStart.toFixed(1)} km from start point
+                                </span>
+                            </div>
+                            <a href="${templeUrl}" target="_blank" class="btn-navigate">
+                                🗺️ Navigate to Temple
+                            </a>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                    <div style="margin-top: 30px; padding: 15px; background: #e8f5e9; border-radius: 10px;">
+                        <p><strong>💡 Tips for your journey:</strong></p>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Google Maps can only handle 10 waypoints at once. Visit the link above to see the first 9 temples.</li>
+                            <li>Most temples are open from 6 AM to 12 PM and 4 PM to 8 PM.</li>
+                            <li>Dress modestly when visiting temples.</li>
+                            <li>Consider the actual driving distance will be longer than the direct distance shown.</li>
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            resultsDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+        }
 
         function findNearestTemples() {
             const button = document.querySelector('.btn-locate');
