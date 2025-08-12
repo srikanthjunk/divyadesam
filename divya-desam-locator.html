@@ -1098,7 +1098,7 @@
 
         // Add temple markers to map
         function addTempleMarkers() {
-            divyaDesams.forEach(temple => {
+            window.divyaDesams.forEach(temple => {
                 const marker = L.marker([temple.lat, temple.lng], {
                     icon: L.divIcon({
                         className: 'temple-marker',
@@ -1115,6 +1115,27 @@
                 
                 templeMarkers.push(marker);
             });
+        }
+
+        // Check if all required data is loaded
+        function checkDependencies() {
+            const issues = [];
+            
+            if (!window.divyaDesams || window.divyaDesams.length === 0) {
+                issues.push('Temple data not loaded');
+            }
+            
+            if (!window.L) {
+                issues.push('Leaflet library not loaded');
+            }
+            
+            if (issues.length > 0) {
+                console.error('❌ Dependencies missing:', issues);
+                return false;
+            }
+            
+            console.log('✅ All dependencies loaded');
+            return true;
         }
 
         // Helper function to get timing information for a temple
@@ -1139,21 +1160,36 @@
 
         // Find nearest temples from coordinates (reusable function)
         async function findNearestTemplesFromCoords(lat, lng) {
+            console.log('🔍 Finding temples from coordinates:', lat, lng);
+            console.log('📊 Temple data available:', window.divyaDesams ? window.divyaDesams.length : 'NOT LOADED');
+            
+            if (!window.divyaDesams || window.divyaDesams.length === 0) {
+                throw new Error('Temple data not loaded. Please refresh the page.');
+            }
+            
             userLocation = { lat, lng };
             await showNearestTemples(userLocation);
         }
 
         // Find nearest temples based on user GPS location
         window.findNearestTemples = function() {
+            console.log('📍 Find My Location button clicked');
+            
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
             const results = document.getElementById('nearbyResults');
+            
+            if (!loading || !error || !results) {
+                console.error('❌ Required DOM elements not found:', {loading: !!loading, error: !!error, results: !!results});
+                return;
+            }
             
             loading.style.display = 'block';
             error.style.display = 'none';
             results.innerHTML = '';
 
             if (navigator.geolocation) {
+                console.log('📍 Geolocation is supported, requesting position...');
                 navigator.geolocation.getCurrentPosition(
                     async position => {
                         try {
@@ -1216,8 +1252,8 @@
             const templesWithDistance = [];
             const batchSize = 3; // Process 3 temples at a time (conservative)
             
-            for (let i = 0; i < divyaDesams.length; i += batchSize) {
-                const batch = divyaDesams.slice(i, i + batchSize);
+            for (let i = 0; i < window.divyaDesams.length; i += batchSize) {
+                const batch = window.divyaDesams.slice(i, i + batchSize);
                 const batchPromises = batch.map(async temple => ({
                     ...temple,
                     distance: await calculateRoadDistance(location.lat, location.lng, temple.lat, temple.lng)
@@ -1227,11 +1263,11 @@
                 templesWithDistance.push(...batchResults);
                 
                 // Update progress
-                const progress = Math.min(100, Math.round((templesWithDistance.length / divyaDesams.length) * 100));
+                const progress = Math.min(100, Math.round((templesWithDistance.length / window.divyaDesams.length) * 100));
                 results.innerHTML = `<div class="loading"><div class="loading-spinner"></div><p>Calculating road distances... ${progress}%</p></div>`;
                 
                 // Longer delay to avoid rate limiting
-                if (i + batchSize < divyaDesams.length) {
+                if (i + batchSize < window.divyaDesams.length) {
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }
             }
@@ -1309,7 +1345,7 @@
                     }));
                     
                     // Search in temple names and locations
-                    const templeMatches = divyaDesams.filter(temple => 
+                    const templeMatches = window.divyaDesams.filter(temple => 
                         temple.displayName.toLowerCase().includes(value) ||
                         temple.name.toLowerCase().includes(value)
                     ).map(temple => ({
@@ -1446,10 +1482,10 @@
         async function findTemplesAlongRoute(start, end, maxDetour, progressCallback) {
             const templesWithDetour = [];
             const batchSize = 2; // Very small batches for route planning (3 API calls per temple)
-            const totalTemples = divyaDesams.length;
+            const totalTemples = window.divyaDesams.length;
             
-            for (let i = 0; i < divyaDesams.length; i += batchSize) {
-                const batch = divyaDesams.slice(i, i + batchSize);
+            for (let i = 0; i < window.divyaDesams.length; i += batchSize) {
+                const batch = window.divyaDesams.slice(i, i + batchSize);
                 const batchPromises = batch.map(async temple => ({
                     ...temple,
                     detour: await calculateDetour(start, end, temple)
@@ -1465,7 +1501,7 @@
                 }
                 
                 // Longer delay to avoid rate limiting (route planning uses more API calls)
-                if (i + batchSize < divyaDesams.length) {
+                if (i + batchSize < window.divyaDesams.length) {
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             }
@@ -1702,6 +1738,8 @@
 
         // Search from selected location
         window.searchFromLocation = async function() {
+            console.log('🌍 Search from location button clicked');
+            
             const input = document.getElementById('locationSearch');
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
@@ -1710,7 +1748,10 @@
             const lat = input.dataset.lat;
             const lng = input.dataset.lng;
             
+            console.log('🔍 Location data:', { lat, lng, inputValue: input.value });
+            
             if (!lat || !lng) {
+                console.log('❌ No coordinates found in input dataset');
                 error.textContent = 'Please select a location from the search suggestions first.';
                 error.style.display = 'block';
                 return;
