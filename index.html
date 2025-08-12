@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divya Desam Locator</title>
+    <meta http-equiv="refresh" content="0; url=divya-desam-locator.html">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+        .loader {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        a {
+            color: white;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="loader">🕉️</div>
+        <h1>Divya Desam Temple Locator</h1>
+        <p>Redirecting to the application...</p>
+        <p><a href="divya-desam-locator.html">Click here if not redirected automatically</a></p>
+        
+        <div style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.9;">
+            <p><strong>Available Tools:</strong></p>
+            <p>📍 <a href="divya-desam-locator.html">Main Application</a> - Find temples near you</p>
+            <p>🔧 <a href="location-search-test.html">Debug Tool</a> - Test location search</p>
+        </div>
+    </div>
+    
+    <script>
+        // JavaScript redirect as backup
+        setTimeout(function() {
+            if (window.location.pathname === '/' || window.location.pathname === '/divyadesam/') {
+                window.location.href = 'divya-desam-locator.html';
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
