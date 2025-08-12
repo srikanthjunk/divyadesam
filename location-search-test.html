@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Search Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        .suggestions { border: 1px solid #ccc; border-radius: 5px; background: white; max-height: 200px; overflow-y: auto; }
+        .suggestion { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .suggestion:hover { background: #f5f5f5; }
+        .suggestion:last-child { border-bottom: none; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 12px; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Location Search Test</h2>
+        <input type="text" id="locationInput" placeholder="Type a city name...">
+        <div id="suggestions" class="suggestions" style="display: none;"></div>
+        <div id="selected"></div>
+        
+        <h3>Debug Log:</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        const OPENROUTE_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6Ijg5OTQ4ZjIyNjdhNjRjMzM5ZjQzZGQ4ODViYjA1NDIwIiwiaCI6Im11cm11cjY0In0=';
+        const OPENROUTE_BASE_URL = 'https://api.openrouteservice.org/v2';
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${time}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        log(`Page loaded. Protocol: ${window.location.protocol}, Host: ${window.location.hostname}`);
+        
+        async function searchLocation(query) {
+            log(`Searching for: "${query}"`);
+            
+            try {
+                const url = `${OPENROUTE_BASE_URL}/geocode/search?api_key=${OPENROUTE_API_KEY}&text=${encodeURIComponent(query)}&size=5`;
+                log(`Fetch URL: ${url}`);
+                
+                const response = await fetch(url);
+                log(`Response status: ${response.status} ${response.statusText}`);
+                
+                const data = await response.json();
+                log(`Response data: ${JSON.stringify(data, null, 2)}`);
+                
+                if (data.features) {
+                    return data.features.map(feature => ({
+                        name: feature.properties.label,
+                        lat: feature.geometry.coordinates[1],
+                        lng: feature.geometry.coordinates[0],
+                        type: feature.properties.layer || 'unknown'
+                    }));
+                } else {
+                    log('No features in response');
+                    return [];
+                }
+                
+            } catch (error) {
+                log(`ERROR: ${error.message}`);
+                return [];
+            }
+        }
+        
+        const input = document.getElementById('locationInput');
+        const suggestions = document.getElementById('suggestions');
+        let searchTimeout;
+        
+        input.addEventListener('input', function() {
+            const value = this.value.trim();
+            log(`Input changed: "${value}"`);
+            
+            if (value.length < 2) {
+                suggestions.style.display = 'none';
+                return;
+            }
+            
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                log(`Starting search for: "${value}"`);
+                const results = await searchLocation(value);
+                log(`Got ${results.length} results`);
+                
+                if (results.length > 0) {
+                    suggestions.innerHTML = results.map(result => `
+                        <div class="suggestion" data-lat="${result.lat}" data-lng="${result.lng}">
+                            📍 ${result.name}
+                            <small style="display: block; color: #999;">${result.type}</small>
+                        </div>
+                    `).join('');
+                    
+                    suggestions.style.display = 'block';
+                    
+                    suggestions.querySelectorAll('.suggestion').forEach(item => {
+                        item.addEventListener('click', function() {
+                            const lat = this.dataset.lat;
+                            const lng = this.dataset.lng;
+                            const name = this.textContent.trim().replace('📍 ', '');
+                            
+                            input.value = name;
+                            suggestions.style.display = 'none';
+                            
+                            document.getElementById('selected').innerHTML = 
+                                `<p><strong>Selected:</strong> ${name}<br>
+                                <strong>Coordinates:</strong> ${lat}, ${lng}</p>`;
+                            
+                            log(`Selected: ${name} (${lat}, ${lng})`);
+                        });
+                    });
+                } else {
+                    suggestions.innerHTML = '<div class="suggestion">No locations found</div>';
+                    suggestions.style.display = 'block';
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>
