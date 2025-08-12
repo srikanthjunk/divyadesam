@@ -1708,11 +1708,7 @@
                 return calculateEstimatedRoadDistance(lat1, lon1, lat2, lon2);
             }
             
-            // Check rate limiting
-            if (!canMakeApiCall()) {
-                console.warn('Rate limit reached, falling back to estimated distance');
-                return calculateEstimatedRoadDistance(lat1, lon1, lat2, lon2);
-            }
+            // Note: Rate limiting now handled per-API (HERE Maps has daily limit tracking)
             
             try {
                 // Increment API call counter
@@ -1754,56 +1750,8 @@
                     console.warn(`⚠️ HERE Maps daily limit reached (${APIS.here.dailyLimit} calls), using estimated distance`);
                 }
                 
-                // Try OpenRoute Service as fallback if enabled
-                if (APIS.openroute.enabled) {
-                    url = `${APIS.openroute.url}?api_key=${APIS.openroute.key}&start=${lon1},${lat1}&end=${lon2},${lat2}`;
-                    
-                    try {
-                        // Try direct API call first with timeout
-                        const response = await fetchWithTimeout(url);
-                        if (response.ok) {
-                            data = await response.json();
-                            
-                            if (data.features && data.features[0] && data.features[0].properties) {
-                                const distanceMeters = data.features[0].properties.segments[0].distance;
-                                const distanceKm = distanceMeters / 1000;
-                                
-                                // Cache the result
-                                routeCache.set(cacheKey, distanceKm);
-                                return distanceKm;
-                            } else {
-                                throw new Error('Invalid OpenRoute response format');
-                            }
-                        } else if (response.status === 429) {
-                            console.warn('OpenRoute rate limit exceeded, trying HERE Maps fallback...');
-                        } else {
-                            throw new Error(`OpenRoute HTTP error! status: ${response.status}`);
-                        }
-                    } catch (corsError) {
-                        console.log('OpenRoute CORS blocked, trying proxy...');
-                        try {
-                            // Fallback to CORS proxy
-                            const proxyUrl = `${APIS.proxy.url}${encodeURIComponent(url)}`;
-                            const proxyResponse = await fetch(proxyUrl);
-                            if (proxyResponse.ok) {
-                                const proxyData = await proxyResponse.json();
-                                data = JSON.parse(proxyData.contents);
-                                console.log('✅ OpenRoute CORS proxy successful');
-                                
-                                if (data.features && data.features[0] && data.features[0].properties) {
-                                    const distanceMeters = data.features[0].properties.segments[0].distance;
-                                    const distanceKm = distanceMeters / 1000;
-                                    
-                                    // Cache the result
-                                    routeCache.set(cacheKey, distanceKm);
-                                    return distanceKm;
-                                }
-                            }
-                        } catch (proxyError) {
-                            console.warn('OpenRoute proxy also failed, trying HERE Maps...', proxyError);
-                        }
-                    }
-                }
+                // OpenRoute Service disabled (demo key returns 404 errors)
+                console.log('⚠️ Skipping OpenRoute Service - disabled due to API issues');
                 
                 // If all APIs fail, fall back to estimated distance
                 throw new Error('All routing APIs failed or unavailable');
@@ -1859,56 +1807,8 @@
                     console.warn(`⚠️ HERE Maps daily limit reached (${APIS.here.dailyLimit} calls), trying OpenRoute fallback`);
                 }
                 
-                // Try OpenRoute Service as fallback if enabled
-                if (APIS.openroute.enabled) {
-                    url = `${APIS.openroute.geocodeUrl}?api_key=${APIS.openroute.key}&text=${encodeURIComponent(query)}&size=5&boundary.country=IN`;
-                    
-                    try {
-                        // Try direct API call first
-                        console.log('Trying OpenRoute geocoding...');
-                        const response = await fetch(url);
-                        if (response.ok) {
-                            data = await response.json();
-                            console.log('✅ OpenRoute geocoding successful');
-                            
-                            return data.features.map(feature => ({
-                                name: feature.properties.label,
-                                coordinates: feature.geometry.coordinates, // [lon, lat]
-                                lat: feature.geometry.coordinates[1],
-                                lng: feature.geometry.coordinates[0],
-                                confidence: feature.properties.confidence || 0,
-                                type: feature.properties.layer || 'unknown'
-                            }));
-                        } else if (response.status === 429) {
-                            console.warn('OpenRoute geocoding rate limit exceeded, trying HERE Maps fallback...');
-                        } else {
-                            throw new Error(`OpenRoute geocoding HTTP error! status: ${response.status}`);
-                        }
-                    } catch (corsError) {
-                        console.log('OpenRoute geocoding CORS blocked, trying proxy...');
-                        try {
-                            // Fallback to CORS proxy
-                            const proxyUrl = `${APIS.proxy.url}${encodeURIComponent(url)}`;
-                            const proxyResponse = await fetch(proxyUrl);
-                            if (proxyResponse.ok) {
-                                const proxyData = await proxyResponse.json();
-                                data = JSON.parse(proxyData.contents);
-                                console.log('✅ OpenRoute geocoding proxy successful');
-                                
-                                return data.features.map(feature => ({
-                                    name: feature.properties.label,
-                                    coordinates: feature.geometry.coordinates, // [lon, lat]
-                                    lat: feature.geometry.coordinates[1],
-                                    lng: feature.geometry.coordinates[0],
-                                    confidence: feature.properties.confidence || 0,
-                                    type: feature.properties.layer || 'unknown'
-                                }));
-                            }
-                        } catch (proxyError) {
-                            console.warn('OpenRoute geocoding proxy also failed, trying HERE Maps...', proxyError);
-                        }
-                    }
-                }
+                // OpenRoute Service disabled (demo key returns 404 errors)
+                console.log('⚠️ Skipping OpenRoute geocoding - disabled due to API issues');
                 
                 // If all geocoding APIs fail
                 throw new Error('All geocoding APIs failed or unavailable');
