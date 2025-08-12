@@ -1543,8 +1543,9 @@
         const OPENROUTE_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6Ijg5OTQ4ZjIyNjdhNjRjMzM5ZjQzZGQ4ODViYjA1NDIwIiwiaCI6Im11cm11cjY0In0=';
         const OPENROUTE_BASE_URL = 'https://api.openrouteservice.org/v2';
         
-        // Check if we can make direct API calls (GitHub Pages and most hosting supports this)
-        const CAN_USE_API = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+        // Disable API calls for now due to CORS and rate limiting issues
+        // Use estimated distances instead for better reliability
+        const CAN_USE_API = false; // Temporarily disabled
         
         // Cache for storing route distances to avoid repeated API calls
         const routeCache = new Map();
