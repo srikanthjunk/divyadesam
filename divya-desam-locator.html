@@ -1249,72 +1249,88 @@
             
             // Show loading message while calculating distances
             const results = document.getElementById('nearbyResults');
-            results.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Calculating road distances... 0%</p></div>';
+            results.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Finding nearest temples...</p></div>';
             
-            console.log(`🚀 Starting distance calculation for ${window.divyaDesams.length} temples`);
+            console.log(`🚀 Finding nearest temples from ${window.divyaDesams.length} total temples`);
             
-            // Calculate road distances for all temples (in batches to avoid overwhelming the API)
-            const templesWithDistance = [];
-            const batchSize = 2; // Process 2 temples at a time (more conservative)
-            const totalTemples = window.divyaDesams.length;
+            // Step 1: Calculate air distance to all temples and find top 10 nearest
+            console.log(`📐 Calculating air distances to all temples...`);
+            const templesWithAirDistance = window.divyaDesams.map(temple => ({
+                ...temple,
+                airDistance: calculateDistance(location.lat, location.lng, temple.lat, temple.lng)
+            }));
             
-            for (let i = 0; i < totalTemples; i += batchSize) {
-                const batch = window.divyaDesams.slice(i, i + batchSize);
-                console.log(`📍 Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(totalTemples/batchSize)}: temples ${i+1}-${Math.min(i+batchSize, totalTemples)}`);
-                
-                // Process each temple in the batch with individual error handling
-                for (const temple of batch) {
-                    try {
-                        console.log(`🔄 Calculating distance to ${temple.displayName}...`);
-                        const distance = await calculateRoadDistance(location.lat, location.lng, temple.lat, temple.lng);
-                        templesWithDistance.push({
-                            ...temple,
-                            distance: distance
-                        });
-                        console.log(`✅ ${temple.displayName}: ${distance.toFixed(1)} km`);
-                    } catch (error) {
-                        console.warn(`⚠️ Failed to calculate distance for ${temple.displayName}:`, error);
-                        // Add temple with estimated distance as fallback
-                        const estimatedDistance = calculateEstimatedRoadDistance(location.lat, location.lng, temple.lat, temple.lng);
-                        templesWithDistance.push({
-                            ...temple,
-                            distance: estimatedDistance,
-                            isEstimated: true
-                        });
-                        console.log(`📐 ${temple.displayName}: ${estimatedDistance.toFixed(1)} km (estimated)`);
-                    }
-                    
-                    // Update progress after each temple
-                    const progress = Math.round((templesWithDistance.length / totalTemples) * 100);
-                    results.innerHTML = `<div class="loading">
-                        <div class="loading-spinner"></div>
-                        <p>Calculating road distances... ${progress}%</p>
-                        <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">
-                            Processing ${templesWithDistance.length}/${totalTemples} temples
-                        </div>
-                        <div style="width: 100%; background: #f0f0f0; border-radius: 10px; margin-top: 10px; height: 8px;">
-                            <div style="width: ${progress}%; background: #667eea; border-radius: 10px; height: 8px; transition: width 0.3s;"></div>
-                        </div>
-                    </div>`;
+            // Sort by air distance and take top 10
+            templesWithAirDistance.sort((a, b) => a.airDistance - b.airDistance);
+            const nearestTemples = templesWithAirDistance.slice(0, 10);
+            
+            console.log(`✅ Found 10 nearest temples by air distance:`);
+            nearestTemples.forEach((temple, i) => {
+                console.log(`${i+1}. ${temple.displayName}: ${temple.airDistance.toFixed(1)} km (air)`);
+            });
+            
+            // Step 2: Calculate road distances only for the top 10 nearest temples
+            results.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Calculating road distances for 10 nearest temples... 0%</p></div>';
+            console.log(`🛣️ Now calculating road distances for top 10 nearest temples...`);
+            
+            const templesWithRoadDistance = [];
+            const totalTemples = nearestTemples.length; // Only 10 temples now
+            
+            for (let i = 0; i < totalTemples; i++) {
+                const temple = nearestTemples[i];
+                try {
+                    console.log(`🔄 Calculating road distance to ${temple.displayName} (${i+1}/10)...`);
+                    const roadDistance = await calculateRoadDistance(location.lat, location.lng, temple.lat, temple.lng);
+                    templesWithRoadDistance.push({
+                        ...temple,
+                        distance: roadDistance,
+                        isEstimated: false
+                    });
+                    console.log(`✅ ${temple.displayName}: ${roadDistance.toFixed(1)} km (road) vs ${temple.airDistance.toFixed(1)} km (air)`);
+                } catch (error) {
+                    console.warn(`⚠️ Failed to calculate road distance for ${temple.displayName}:`, error);
+                    // Use air distance as fallback with 1.3x multiplier for road estimate
+                    const estimatedRoadDistance = temple.airDistance * 1.3;
+                    templesWithRoadDistance.push({
+                        ...temple,
+                        distance: estimatedRoadDistance,
+                        isEstimated: true
+                    });
+                    console.log(`📐 ${temple.displayName}: ${estimatedRoadDistance.toFixed(1)} km (estimated from air distance)`);
                 }
                 
-                // Longer delay between batches to avoid rate limiting
-                if (i + batchSize < totalTemples) {
-                    console.log(`⏱️ Waiting 1 second before next batch to avoid rate limits...`);
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                // Update progress after each temple
+                const progress = Math.round(((i + 1) / totalTemples) * 100);
+                results.innerHTML = `<div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Calculating road distances for 10 nearest temples... ${progress}%</p>
+                    <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">
+                        Processing ${i + 1}/${totalTemples} nearest temples
+                    </div>
+                    <div style="width: 100%; background: #f0f0f0; border-radius: 10px; margin-top: 10px; height: 8px;">
+                        <div style="width: ${progress}%; background: #667eea; border-radius: 10px; height: 8px; transition: width 0.3s;"></div>
+                    </div>
+                </div>`;
+                
+                // Small delay between API calls
+                if (i < totalTemples - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
                 }
             }
             
-            console.log(`🎉 Distance calculation completed! Processed ${templesWithDistance.length}/${totalTemples} temples`);
-            const successCount = templesWithDistance.filter(t => !t.isEstimated).length;
-            const estimatedCount = templesWithDistance.filter(t => t.isEstimated).length;
-            console.log(`📊 Results: ${successCount} actual distances, ${estimatedCount} estimated distances`);
+            console.log(`🎉 Road distance calculation completed for top 10 temples!`);
+            const successCount = templesWithRoadDistance.filter(t => !t.isEstimated).length;
+            const estimatedCount = templesWithRoadDistance.filter(t => t.isEstimated).length;
+            console.log(`📊 Results: ${successCount} actual road distances, ${estimatedCount} estimated from air distance`);
+            
+            // Sort by road distance (final sort)
+            const templesWithDistance = templesWithRoadDistance;
             
             
             // Sort by distance and show results
             templesWithDistance.sort((a, b) => a.distance - b.distance);
             
-            results.innerHTML = templesWithDistance.slice(0, 10).map(temple => {
+            results.innerHTML = templesWithDistance.map(temple => {
                 const timings = getTempleTimings(temple);
                 const hours = timings && timings.hours && Array.isArray(timings.hours) ? timings.hours : ["Standard temple hours"];
                 return `
