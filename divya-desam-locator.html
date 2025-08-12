@@ -2,6 +2,7 @@
 <!--
 Divya Desam Temple Locator
 Version History:
+- v3.0.1: Fixed location search + Added fallback to Indian cities list when API fails
 - v3.0.0: HERE Maps API integration + Optimized distance calculation (10 nearest only)
 - v2.2.0: Integrated temple timings + Location search functionality  
 - v2.1.0: Temple data refactoring + Route planning
@@ -1788,6 +1789,49 @@ Version History:
             }
         }
         
+        // Fallback Indian cities for location search when APIs fail
+        const fallbackCities = [
+            {name: "Chennai", lat: 13.0827, lng: 80.2707, state: "Tamil Nadu"},
+            {name: "Mumbai", lat: 19.0760, lng: 72.8777, state: "Maharashtra"},
+            {name: "Delhi", lat: 28.7041, lng: 77.1025, state: "Delhi"},
+            {name: "Bangalore", lat: 12.9716, lng: 77.5946, state: "Karnataka"},
+            {name: "Kolkata", lat: 22.5726, lng: 88.3639, state: "West Bengal"},
+            {name: "Hyderabad", lat: 17.3850, lng: 78.4867, state: "Telangana"},
+            {name: "Pune", lat: 18.5204, lng: 73.8567, state: "Maharashtra"},
+            {name: "Surat", lat: 21.1702, lng: 72.8311, state: "Gujarat"},
+            {name: "Ahmedabad", lat: 23.0225, lng: 72.5714, state: "Gujarat"},
+            {name: "Jaipur", lat: 26.9124, lng: 75.7873, state: "Rajasthan"},
+            {name: "Coimbatore", lat: 11.0168, lng: 76.9558, state: "Tamil Nadu"},
+            {name: "Madurai", lat: 9.9252, lng: 78.1198, state: "Tamil Nadu"},
+            {name: "Salem", lat: 11.6643, lng: 78.1460, state: "Tamil Nadu"},
+            {name: "Tiruchirappalli", lat: 10.7905, lng: 78.7047, state: "Tamil Nadu"},
+            {name: "Tirupati", lat: 13.6288, lng: 79.4192, state: "Andhra Pradesh"},
+            {name: "Vellore", lat: 12.9165, lng: 79.1325, state: "Tamil Nadu"},
+            {name: "Erode", lat: 11.3410, lng: 77.7172, state: "Tamil Nadu"},
+            {name: "Thanjavur", lat: 10.7870, lng: 79.1378, state: "Tamil Nadu"},
+            {name: "Kanchipuram", lat: 12.8342, lng: 79.7036, state: "Tamil Nadu"},
+            {name: "Pondicherry", lat: 11.9416, lng: 79.8083, state: "Puducherry"}
+        ];
+        
+        // Search in fallback cities list
+        function searchInFallbackCities(query) {
+            const searchTerm = query.toLowerCase();
+            const matches = fallbackCities.filter(city => 
+                city.name.toLowerCase().includes(searchTerm) ||
+                city.state.toLowerCase().includes(searchTerm)
+            ).slice(0, 5); // Limit to 5 results
+            
+            return matches.map(city => ({
+                name: `${city.name}, ${city.state}`,
+                lat: city.lat,
+                lng: city.lng,
+                coordinates: [city.lng, city.lat],
+                confidence: 0.8,
+                type: 'city',
+                address: `${city.name}, ${city.state}, India`
+            }));
+        }
+        
         // Location geocoding functions
         async function searchLocation(query) {
             console.log('CAN_USE_API:', CAN_USE_API, 'Protocol:', window.location.protocol);
@@ -1835,8 +1879,9 @@ Version History:
                 // OpenRoute Service disabled (demo key returns 404 errors)
                 console.log('⚠️ Skipping OpenRoute geocoding - disabled due to API issues');
                 
-                // If all geocoding APIs fail
-                throw new Error('All geocoding APIs failed or unavailable');
+                // Fallback to basic Indian cities list if APIs fail
+                console.log('🏙️ Using fallback Indian cities list for search');
+                return searchInFallbackCities(query);
                 
             } catch (error) {
                 console.error('Location search failed:', error);
@@ -2154,7 +2199,7 @@ Version History:
 
     <!-- Version info -->
     <div style="position: fixed; bottom: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; color: #666; z-index: 1000; border: 1px solid #ddd;">
-        v3.0.0 - HERE Maps API + Optimized Distance Calculation
+        v3.0.1 - Fixed Location Search + Fallback Cities
     </div>
 </body>
 </html>
