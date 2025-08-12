@@ -1539,13 +1539,29 @@
             return detour;
         }
 
-        // OpenRoute Service API configuration
-        const OPENROUTE_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6Ijg5OTQ4ZjIyNjdhNjRjMzM5ZjQzZGQ4ODViYjA1NDIwIiwiaCI6Im11cm11cjY0In0=';
-        const OPENROUTE_BASE_URL = 'https://api.openrouteservice.org/v2';
+        // API configuration - Multiple providers for reliability
+        const APIS = {
+            // Option 1: MapBox (CORS-friendly, 100k free requests/month)
+            mapbox: {
+                key: 'YOUR_MAPBOX_API_KEY', // Get from https://mapbox.com
+                url: 'https://api.mapbox.com/directions/v5/mapbox/driving',
+                enabled: false // Enable after getting API key
+            },
+            // Option 2: OpenRoute Service (current, has CORS issues)
+            openroute: {
+                key: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6Ijg5OTQ4ZjIyNjdhNjRjMzM5ZjQzZGQ4ODViYjA1NDIwIiwiaCI6Im11cm11cjY0In0=',
+                url: 'https://api.openrouteservice.org/v2/directions/driving-car',
+                enabled: true
+            },
+            // Option 3: CORS Proxy for any API
+            proxy: {
+                url: 'https://api.allorigins.win/get?url=',
+                enabled: true
+            }
+        };
         
-        // Disable API calls for now due to CORS and rate limiting issues
-        // Use estimated distances instead for better reliability
-        const CAN_USE_API = false; // Temporarily disabled
+        // Check if we can make direct API calls (GitHub Pages and most hosting supports this)
+        const CAN_USE_API = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
         
         // Cache for storing route distances to avoid repeated API calls
         const routeCache = new Map();
@@ -1606,18 +1622,37 @@
                 // Increment API call counter
                 apiCallCount++;
                 
-                const url = `${OPENROUTE_BASE_URL}/directions/driving-car?api_key=${OPENROUTE_API_KEY}&start=${lon1},${lat1}&end=${lon2},${lat2}`;
-                const response = await fetch(url);
+                const url = `${APIS.openroute.url}?api_key=${APIS.openroute.key}&start=${lon1},${lat1}&end=${lon2},${lat2}`;
                 
-                if (!response.ok) {
-                    if (response.status === 429) {
-                        console.warn('API rate limit exceeded, falling back to estimated distance');
-                        return calculateEstimatedRoadDistance(lat1, lon1, lat2, lon2);
+                let response, data;
+                try {
+                    // Try direct API call first
+                    response = await fetch(url);
+                } catch (corsError) {
+                    console.log('CORS blocked, trying proxy...');
+                    // Fallback to CORS proxy
+                    const proxyUrl = `${APIS.proxy.url}${encodeURIComponent(url)}`;
+                    const proxyResponse = await fetch(proxyUrl);
+                    if (proxyResponse.ok) {
+                        const proxyData = await proxyResponse.json();
+                        data = JSON.parse(proxyData.contents);
+                        console.log('✅ CORS proxy successful');
+                    } else {
+                        throw corsError; // Re-throw original CORS error
                     }
-                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
-                const data = await response.json();
+                // If we don't have data from proxy, get it from response
+                if (!data) {
+                    if (!response.ok) {
+                        if (response.status === 429) {
+                            console.warn('API rate limit exceeded, falling back to estimated distance');
+                            return calculateEstimatedRoadDistance(lat1, lon1, lat2, lon2);
+                        }
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    data = await response.json();
+                }
                 
                 if (data.features && data.features[0] && data.features[0].properties) {
                     const distanceMeters = data.features[0].properties.segments[0].distance;
@@ -1645,12 +1680,32 @@
             }
             
             try {
-                const url = `${OPENROUTE_BASE_URL}/geocode/search?api_key=${OPENROUTE_API_KEY}&text=${encodeURIComponent(query)}&size=5`;
-                console.log('Fetching URL:', url);
-                const response = await fetch(url);
-                console.log('Response status:', response.status);
-                const data = await response.json();
-                console.log('API Response:', data);
+                const url = `https://api.openrouteservice.org/geocode/search?api_key=${APIS.openroute.key}&text=${encodeURIComponent(query)}&size=5`;
+                
+                let response, data;
+                try {
+                    // Try direct API call first
+                    console.log('Trying direct geocoding API...');
+                    response = await fetch(url);
+                    if (response.ok) {
+                        data = await response.json();
+                        console.log('✅ Direct geocoding successful');
+                    } else {
+                        throw new Error('Direct API failed');
+                    }
+                } catch (corsError) {
+                    console.log('Geocoding CORS blocked, trying proxy...');
+                    // Fallback to CORS proxy
+                    const proxyUrl = `${APIS.proxy.url}${encodeURIComponent(url)}`;
+                    const proxyResponse = await fetch(proxyUrl);
+                    if (proxyResponse.ok) {
+                        const proxyData = await proxyResponse.json();
+                        data = JSON.parse(proxyData.contents);
+                        console.log('✅ Geocoding proxy successful');
+                    } else {
+                        throw corsError;
+                    }
+                }
                 
                 return data.features.map(feature => ({
                     name: feature.properties.label,
