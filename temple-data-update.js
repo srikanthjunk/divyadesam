@@ -1,7 +1,7 @@
-// Comprehensive Divya Desam temple database
-// 108 temples with complete information including Perumal, Thaayaar, and Regional classification
+// Complete Divya Desam temple data with Perumal, Thaayaar, and Region information
+// This will replace the existing temples array
 
-const divyaDesams = [
+const updatedTemples = [
     // Chola Nadu (40 temples)
     { name: "ThiruArangam", displayName: "Sri Ranganathaswamy Temple, Srirangam", lat: 10.8620, lng: 78.6960, link: "https://www.google.com/maps/search/?api=1&query=Sri+Ranganathaswamy+Temple,+Srirangam", perumal: "Ranganathan", thaayaar: "Ranganayaki", region: "Chola" },
     { name: "ThiruKoazhi", displayName: "Nachiyar Koil, Thirunaraiyur", lat: 10.7500, lng: 79.6000, link: "https://www.google.com/maps/search/?api=1&query=Nachiyar+Koil,+Thirunaraiyur", perumal: "Azhagiya Manavaalan", thaayaar: "Kamalavalli", region: "Chola" },
@@ -125,25 +125,10 @@ const divyaDesams = [
     { name: "ThiruParamapatham", displayName: "Vaikuntham", lat: 0.0000, lng: 0.0000, link: "Not Applicable", perumal: "Paramapatha Nathan", thaayaar: "Periya Piraattiyaar", region: "Vaikundam" }
 ];
 
-// Regional distribution summary
-const regionalSummary = {
-    "Chola": { count: 40, description: "Chola Nadu - Heart of Tamil temple architecture" },
-    "Nadu": { count: 2, description: "Nadu - Transition region" },
-    "Thondai": { count: 22, description: "Thondai Nadu - Ancient Tamil heartland including Chennai & Kanchipuram" },
-    "Vada": { count: 12, description: "Vada Nadu - North Indian sacred sites including Badrinath, Dwarka, Tirupati" },
-    "Malai": { count: 13, description: "Malai Nadu - Kerala temple traditions" },
-    "Pandiya": { count: 18, description: "Pandiya Nadu - Southern Tamil regions including Madurai & Nava Tirupathi" },
-    "Vaikundam": { count: 1, description: "Vaikundam - The celestial abode" }
-};
-
-// Export for use in HTML
-if (typeof window !== 'undefined') {
-    window.divyaDesams = divyaDesams;
-    window.regionalSummary = regionalSummary;
-    console.log('✅ Temple data loaded successfully:', divyaDesams.length, 'temples');
-}
-
-// For Node.js (testing)
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { divyaDesams, regionalSummary };
-}
+console.log(`Total temples: ${updatedTemples.length}`);
+console.log('Regional distribution:');
+const regionCounts = {};
+updatedTemples.forEach(temple => {
+    regionCounts[temple.region] = (regionCounts[temple.region] || 0) + 1;
+});
+console.log(regionCounts);
