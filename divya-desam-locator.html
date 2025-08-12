@@ -1541,19 +1541,32 @@
 
         // API configuration - Multiple providers for reliability
         const APIS = {
-            // Option 1: MapBox (CORS-friendly, 100k free requests/month)
+            // Option 1: HERE Maps (Primary - CORS-friendly, production ready)
+            here: {
+                key: 'zKgxlEjQH_RLWBmqTViWQtVIBsxZZAQE0erZEsoMXuQ',
+                routeUrl: 'https://router.hereapi.com/v8/routes',
+                geocodeUrl: 'https://geocode.search.hereapi.com/v1/geocode',
+                enabled: true // Primary API
+            },
+            // Option 2: MapBox (CORS-friendly, 100k free requests/month)
             mapbox: {
                 key: 'YOUR_MAPBOX_API_KEY', // Get from https://mapbox.com
                 url: 'https://api.mapbox.com/directions/v5/mapbox/driving',
                 enabled: false // Enable after getting API key
             },
-            // Option 2: OpenRoute Service (current, has CORS issues)
+            // Option 3: OpenRoute Service (2000 free requests/day)
             openroute: {
+                key: 'YOUR_OPENROUTE_API_KEY', // Get from https://openrouteservice.org/
+                url: 'https://api.openrouteservice.org/v2/directions/driving-car',
+                enabled: false // Disabled - add your own key
+            },
+            // Option 4: Demo/fallback key (limited usage)
+            demo: {
                 key: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6Ijg5OTQ4ZjIyNjdhNjRjMzM5ZjQzZGQ4ODViYjA1NDIwIiwiaCI6Im11cm11cjY0In0=',
                 url: 'https://api.openrouteservice.org/v2/directions/driving-car',
-                enabled: true
+                enabled: false // Disabled - using HERE Maps instead
             },
-            // Option 3: CORS Proxy for any API
+            // Option 5: CORS Proxy for any API
             proxy: {
                 url: 'https://api.allorigins.win/get?url=',
                 enabled: true
@@ -1562,6 +1575,19 @@
         
         // Check if we can make direct API calls (GitHub Pages and most hosting supports this)
         const CAN_USE_API = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+        
+        // API Status Messages
+        if (APIS.here.enabled) {
+            console.log('✅ Using HERE Maps API for routing and geocoding');
+            console.log('🗺️  HERE Maps: https://developer.here.com/');
+        } else if (APIS.demo.enabled) {
+            console.warn('⚠️  USING DEMO API KEY - Limited quota shared by all users');
+            console.log('🔑 For production use, get your own free API key:');
+            console.log('   • HERE Maps: https://developer.here.com/ (Free tier available)');
+            console.log('   • OpenRoute Service: https://openrouteservice.org/ (2000 req/day)');
+            console.log('   • MapBox: https://mapbox.com/ (100k req/month)');
+            console.log('   • Then replace YOUR_API_KEY in the code');
+        }
         
         // Cache for storing route distances to avoid repeated API calls
         const routeCache = new Map();
@@ -1622,56 +1648,96 @@
                 // Increment API call counter
                 apiCallCount++;
                 
-                const url = `${APIS.openroute.url}?api_key=${APIS.openroute.key}&start=${lon1},${lat1}&end=${lon2},${lat2}`;
+                let url, data;
                 
-                let response, data;
-                try {
-                    // Try direct API call first
-                    response = await fetch(url);
-                } catch (corsError) {
-                    console.log('CORS blocked, trying proxy...');
-                    // Fallback to CORS proxy
-                    const proxyUrl = `${APIS.proxy.url}${encodeURIComponent(url)}`;
-                    const proxyResponse = await fetch(proxyUrl);
-                    if (proxyResponse.ok) {
-                        const proxyData = await proxyResponse.json();
-                        data = JSON.parse(proxyData.contents);
-                        console.log('✅ CORS proxy successful');
-                    } else {
-                        throw corsError; // Re-throw original CORS error
-                    }
-                }
-                
-                // If we don't have data from proxy, get it from response
-                if (!data) {
-                    if (!response.ok) {
-                        if (response.status === 429) {
-                            console.warn('API rate limit exceeded, falling back to estimated distance');
-                            return calculateEstimatedRoadDistance(lat1, lon1, lat2, lon2);
-                        }
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    data = await response.json();
-                }
-                
-                if (data.features && data.features[0] && data.features[0].properties) {
-                    const distanceMeters = data.features[0].properties.segments[0].distance;
-                    const distanceKm = distanceMeters / 1000;
+                // Try HERE Maps first if enabled
+                if (APIS.here.enabled) {
+                    url = `${APIS.here.routeUrl}?transportMode=car&origin=${lat1},${lon1}&destination=${lat2},${lon2}&return=summary&apikey=${APIS.here.key}`;
                     
-                    // Cache the result
-                    routeCache.set(cacheKey, distanceKm);
-                    return distanceKm;
-                } else {
-                    throw new Error('Invalid response format');
+                    try {
+                        const response = await fetch(url);
+                        if (!response.ok) {
+                            if (response.status === 429) {
+                                console.warn('HERE Maps rate limit exceeded, falling back to estimated distance');
+                                return calculateEstimatedRoadDistance(lat1, lon1, lat2, lon2);
+                            }
+                            throw new Error(`HERE Maps HTTP error! status: ${response.status}`);
+                        }
+                        data = await response.json();
+                        
+                        if (data.routes && data.routes[0] && data.routes[0].sections) {
+                            const distanceMeters = data.routes[0].sections[0].summary.length;
+                            const distanceKm = distanceMeters / 1000;
+                            
+                            // Cache the result
+                            routeCache.set(cacheKey, distanceKm);
+                            return distanceKm;
+                        } else {
+                            throw new Error('Invalid HERE Maps response format');
+                        }
+                    } catch (hereError) {
+                        console.warn('HERE Maps failed, trying fallback APIs:', hereError);
+                        // Continue to fallback APIs below
+                    }
                 }
+                
+                // Fallback to other APIs if HERE Maps fails or is disabled
+                if (APIS.demo.enabled) {
+                    url = `${APIS.demo.url}?api_key=${APIS.demo.key}&start=${lon1},${lat1}&end=${lon2},${lat2}`;
+                    
+                    let response, data;
+                    try {
+                        // Try direct API call first
+                        response = await fetch(url);
+                    } catch (corsError) {
+                        console.log('CORS blocked, trying proxy...');
+                        // Fallback to CORS proxy
+                        const proxyUrl = `${APIS.proxy.url}${encodeURIComponent(url)}`;
+                        const proxyResponse = await fetch(proxyUrl);
+                        if (proxyResponse.ok) {
+                            const proxyData = await proxyResponse.json();
+                            data = JSON.parse(proxyData.contents);
+                            console.log('✅ CORS proxy successful');
+                        } else {
+                            throw corsError; // Re-throw original CORS error
+                        }
+                    }
+                    
+                    // If we don't have data from proxy, get it from response
+                    if (!data) {
+                        if (!response.ok) {
+                            if (response.status === 429) {
+                                console.warn('API rate limit exceeded, falling back to estimated distance');
+                                return calculateEstimatedRoadDistance(lat1, lon1, lat2, lon2);
+                            }
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        data = await response.json();
+                    }
+                    
+                    if (data.features && data.features[0] && data.features[0].properties) {
+                        const distanceMeters = data.features[0].properties.segments[0].distance;
+                        const distanceKm = distanceMeters / 1000;
+                        
+                        // Cache the result
+                        routeCache.set(cacheKey, distanceKm);
+                        return distanceKm;
+                    } else {
+                        throw new Error('Invalid response format');
+                    }
+                }
+                
+                // If no API is enabled, fall back to estimated distance
+                throw new Error('No routing API enabled');
+                
             } catch (error) {
-                console.warn('OpenRoute API failed, falling back to estimated distance:', error);
+                console.warn('Routing API failed, falling back to estimated distance:', error);
                 // Fallback to estimated road distance
                 return calculateEstimatedRoadDistance(lat1, lon1, lat2, lon2);
             }
         }
         
-        // OpenRoute Service Geocoding functions
+        // Location geocoding functions
         async function searchLocation(query) {
             console.log('CAN_USE_API:', CAN_USE_API, 'Protocol:', window.location.protocol);
             
@@ -1680,41 +1746,79 @@
             }
             
             try {
-                const url = `https://api.openrouteservice.org/geocode/search?api_key=${APIS.openroute.key}&text=${encodeURIComponent(query)}&size=5`;
+                let url, data;
                 
-                let response, data;
-                try {
-                    // Try direct API call first
-                    console.log('Trying direct geocoding API...');
-                    response = await fetch(url);
-                    if (response.ok) {
-                        data = await response.json();
-                        console.log('✅ Direct geocoding successful');
-                    } else {
-                        throw new Error('Direct API failed');
-                    }
-                } catch (corsError) {
-                    console.log('Geocoding CORS blocked, trying proxy...');
-                    // Fallback to CORS proxy
-                    const proxyUrl = `${APIS.proxy.url}${encodeURIComponent(url)}`;
-                    const proxyResponse = await fetch(proxyUrl);
-                    if (proxyResponse.ok) {
-                        const proxyData = await proxyResponse.json();
-                        data = JSON.parse(proxyData.contents);
-                        console.log('✅ Geocoding proxy successful');
-                    } else {
-                        throw corsError;
+                // Try HERE Maps first if enabled
+                if (APIS.here.enabled) {
+                    url = `${APIS.here.geocodeUrl}?q=${encodeURIComponent(query)}&limit=5&apikey=${APIS.here.key}`;
+                    
+                    try {
+                        console.log('Trying HERE Maps geocoding...');
+                        const response = await fetch(url);
+                        if (response.ok) {
+                            data = await response.json();
+                            console.log('✅ HERE Maps geocoding successful');
+                            
+                            return data.items.map(item => ({
+                                name: item.title,
+                                coordinates: [item.position.lng, item.position.lat], // [lon, lat]
+                                lat: item.position.lat,
+                                lng: item.position.lng,
+                                confidence: item.scoring ? item.scoring.queryScore : 0.8,
+                                type: item.resultType || 'unknown',
+                                address: item.address ? item.address.label : item.title
+                            }));
+                        } else {
+                            throw new Error('HERE Maps geocoding API failed');
+                        }
+                    } catch (hereError) {
+                        console.warn('HERE Maps geocoding failed, trying fallback:', hereError);
+                        // Continue to fallback APIs below
                     }
                 }
                 
-                return data.features.map(feature => ({
-                    name: feature.properties.label,
-                    coordinates: feature.geometry.coordinates, // [lon, lat]
-                    lat: feature.geometry.coordinates[1],
-                    lng: feature.geometry.coordinates[0],
-                    confidence: feature.properties.confidence || 0,
-                    type: feature.properties.layer || 'unknown'
-                }));
+                // Fallback to OpenRoute Service if HERE Maps fails or is disabled
+                if (APIS.demo.enabled) {
+                    url = `https://api.openrouteservice.org/geocode/search?api_key=${APIS.demo.key}&text=${encodeURIComponent(query)}&size=5`;
+                    
+                    let response, data;
+                    try {
+                        // Try direct API call first
+                        console.log('Trying direct geocoding API...');
+                        response = await fetch(url);
+                        if (response.ok) {
+                            data = await response.json();
+                            console.log('✅ Direct geocoding successful');
+                        } else {
+                            throw new Error('Direct API failed');
+                        }
+                    } catch (corsError) {
+                        console.log('Geocoding CORS blocked, trying proxy...');
+                        // Fallback to CORS proxy
+                        const proxyUrl = `${APIS.proxy.url}${encodeURIComponent(url)}`;
+                        const proxyResponse = await fetch(proxyUrl);
+                        if (proxyResponse.ok) {
+                            const proxyData = await proxyResponse.json();
+                            data = JSON.parse(proxyData.contents);
+                            console.log('✅ Geocoding proxy successful');
+                        } else {
+                            throw corsError;
+                        }
+                    }
+                    
+                    return data.features.map(feature => ({
+                        name: feature.properties.label,
+                        coordinates: feature.geometry.coordinates, // [lon, lat]
+                        lat: feature.geometry.coordinates[1],
+                        lng: feature.geometry.coordinates[0],
+                        confidence: feature.properties.confidence || 0,
+                        type: feature.properties.layer || 'unknown'
+                    }));
+                }
+                
+                // If no geocoding API is available
+                throw new Error('No geocoding API enabled');
+                
             } catch (error) {
                 console.error('Location search failed:', error);
                 return [];
