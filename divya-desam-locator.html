@@ -978,10 +978,19 @@
             const end = { lat: parseFloat(endInput.dataset.lat), lng: parseFloat(endInput.dataset.lng) };
             const maxDetour = parseInt(detourRange.value);
             
-            // Find temples along route with real road distances
+            // Find temples along route with real road distances and progress
             (async () => {
                 try {
-                    const templesAlongRoute = await findTemplesAlongRoute(start, end, maxDetour);
+                    // Progress callback function
+                    const updateProgress = (progress, processed, total) => {
+                        loading.innerHTML = `
+                            <div class="loading-spinner"></div>
+                            <p>Calculating route detours... ${progress}%</p>
+                            <small>Processed ${processed} of ${total} temples</small>
+                        `;
+                    };
+                    
+                    const templesAlongRoute = await findTemplesAlongRoute(start, end, maxDetour, updateProgress);
                     loading.style.display = 'none';
                     
                     if (templesAlongRoute.length > 0) {
@@ -995,7 +1004,10 @@
                                 <div class="temple-card">
                                     <div class="temple-name">${temple.displayName}</div>
                                     <div class="temple-distance">
-                                        Actual Road Detour: <strong>${temple.detour.toFixed(1)} km</strong>
+                                        Road Detour: <strong>${temple.detour.toFixed(1)} km</strong>
+                                        <small style="color: #999; display: block;">
+                                            ${CAN_USE_API ? '(Actual route calculation)' : '(Estimated)'}
+                                        </small>
                                     </div>
                                     <a href="${temple.link}" target="_blank" class="btn-navigate">Get Directions</a>
                                 </div>
@@ -1013,10 +1025,11 @@
             })();
         };
 
-        // Find temples along route with real road distances
-        async function findTemplesAlongRoute(start, end, maxDetour) {
+        // Find temples along route with real road distances and progress updates
+        async function findTemplesAlongRoute(start, end, maxDetour, progressCallback) {
             const templesWithDetour = [];
             const batchSize = 2; // Very small batches for route planning (3 API calls per temple)
+            const totalTemples = divyaDesams.length;
             
             for (let i = 0; i < divyaDesams.length; i += batchSize) {
                 const batch = divyaDesams.slice(i, i + batchSize);
@@ -1027,6 +1040,12 @@
                 
                 const batchResults = await Promise.all(batchPromises);
                 templesWithDetour.push(...batchResults);
+                
+                // Update progress
+                const progress = Math.min(100, Math.round((templesWithDetour.length / totalTemples) * 100));
+                if (progressCallback) {
+                    progressCallback(progress, templesWithDetour.length, totalTemples);
+                }
                 
                 // Longer delay to avoid rate limiting (route planning uses more API calls)
                 if (i + batchSize < divyaDesams.length) {
@@ -1046,7 +1065,9 @@
             
             // If start and end are very close (same city), use road distance from start point
             if (directRoadDistance < 2) {
-                return await calculateRoadDistance(start.lat, start.lng, temple.lat, temple.lng);
+                const distanceFromStart = await calculateRoadDistance(start.lat, start.lng, temple.lat, temple.lng);
+                console.log(`Temple ${temple.displayName}: Same city route, distance from start: ${distanceFromStart.toFixed(1)}km`);
+                return distanceFromStart;
             }
             
             const [startToTemple, templeToEnd] = await Promise.all([
@@ -1055,7 +1076,12 @@
             ]);
             
             const viaTempleRoadDistance = startToTemple + templeToEnd;
-            return Math.max(0, viaTempleRoadDistance - directRoadDistance);
+            const detour = Math.max(0, viaTempleRoadDistance - directRoadDistance);
+            
+            // Debug logging
+            console.log(`Temple ${temple.displayName}: Direct: ${directRoadDistance.toFixed(1)}km, Via temple: ${viaTempleRoadDistance.toFixed(1)}km, Detour: ${detour.toFixed(1)}km`);
+            
+            return detour;
         }
 
         // OpenRoute Service API configuration
