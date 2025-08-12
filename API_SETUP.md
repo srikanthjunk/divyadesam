@@ -1,26 +1,35 @@
 # 🔑 API Key Setup Guide
 
 ## ✅ Current Status
-The app is now using **HERE Maps API** with your provided API key for both routing and geocoding services.
+The app uses **OpenRoute Service** as primary API with **HERE Maps** as fallback (limited to 500 requests/day, India-only).
 
-## 🌟 Current Setup: HERE Maps (Active)
+## 🌟 Current Setup: Smart API Fallback System
 
-### Why HERE Maps?
-- ✅ **Production-ready API key provided**
-- ✅ **CORS-friendly** (works directly from browsers)
-- ✅ **Fast and reliable**
-- ✅ **No proxy needed**
-- ✅ **Comprehensive geocoding and routing**
+### API Priority:
+1. **OpenRoute Service** (Primary - 2000 requests/day)
+2. **HERE Maps** (Fallback - 500 requests/day, India-only)
+3. **Estimated distances** (Final fallback)
 
 ### Current Configuration:
 ```javascript
+openroute: {
+    key: 'demo_key', // Demo key provided
+    enabled: true // Primary API
+},
 here: {
     key: 'zKgxlEjQH_RLWBmqTViWQtVIBsxZZAQE0erZEsoMXuQ',
-    routeUrl: 'https://router.hereapi.com/v8/routes',
-    geocodeUrl: 'https://geocode.search.hereapi.com/v1/geocode',
-    enabled: true // Currently active
+    enabled: true, // Fallback API
+    dailyLimit: 500, // Rate limited
+    // India-only geocoding with bounding box
 },
 ```
+
+### How it Works:
+- **Routing**: OpenRoute → HERE Maps (if <500 calls) → Estimated distances
+- **Location Search**: OpenRoute (India filter) → HERE Maps (India-only) → Empty results
+- **Rate Limiting**: HERE Maps usage tracked and limited to 500 requests/day
+- **Geographic Filter**: HERE Maps limited to India bounding box for geocoding
+- **Console Logging**: Shows which API is being used and remaining HERE Maps quota
 
 ## 🔄 Alternative Options (If Needed)
 
