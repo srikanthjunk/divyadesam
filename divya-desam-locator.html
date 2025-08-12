@@ -1249,37 +1249,74 @@
             
             // Show loading message while calculating distances
             const results = document.getElementById('nearbyResults');
-            results.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Calculating road distances...</p></div>';
+            results.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Calculating road distances... 0%</p></div>';
+            
+            console.log(`🚀 Starting distance calculation for ${window.divyaDesams.length} temples`);
             
             // Calculate road distances for all temples (in batches to avoid overwhelming the API)
             const templesWithDistance = [];
-            const batchSize = 3; // Process 3 temples at a time (conservative)
+            const batchSize = 2; // Process 2 temples at a time (more conservative)
+            const totalTemples = window.divyaDesams.length;
             
-            for (let i = 0; i < window.divyaDesams.length; i += batchSize) {
+            for (let i = 0; i < totalTemples; i += batchSize) {
                 const batch = window.divyaDesams.slice(i, i + batchSize);
-                const batchPromises = batch.map(async temple => ({
-                    ...temple,
-                    distance: await calculateRoadDistance(location.lat, location.lng, temple.lat, temple.lng)
-                }));
+                console.log(`📍 Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(totalTemples/batchSize)}: temples ${i+1}-${Math.min(i+batchSize, totalTemples)}`);
                 
-                const batchResults = await Promise.all(batchPromises);
-                templesWithDistance.push(...batchResults);
+                // Process each temple in the batch with individual error handling
+                for (const temple of batch) {
+                    try {
+                        console.log(`🔄 Calculating distance to ${temple.displayName}...`);
+                        const distance = await calculateRoadDistance(location.lat, location.lng, temple.lat, temple.lng);
+                        templesWithDistance.push({
+                            ...temple,
+                            distance: distance
+                        });
+                        console.log(`✅ ${temple.displayName}: ${distance.toFixed(1)} km`);
+                    } catch (error) {
+                        console.warn(`⚠️ Failed to calculate distance for ${temple.displayName}:`, error);
+                        // Add temple with estimated distance as fallback
+                        const estimatedDistance = calculateEstimatedRoadDistance(location.lat, location.lng, temple.lat, temple.lng);
+                        templesWithDistance.push({
+                            ...temple,
+                            distance: estimatedDistance,
+                            isEstimated: true
+                        });
+                        console.log(`📐 ${temple.displayName}: ${estimatedDistance.toFixed(1)} km (estimated)`);
+                    }
+                    
+                    // Update progress after each temple
+                    const progress = Math.round((templesWithDistance.length / totalTemples) * 100);
+                    results.innerHTML = `<div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Calculating road distances... ${progress}%</p>
+                        <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">
+                            Processing ${templesWithDistance.length}/${totalTemples} temples
+                        </div>
+                        <div style="width: 100%; background: #f0f0f0; border-radius: 10px; margin-top: 10px; height: 8px;">
+                            <div style="width: ${progress}%; background: #667eea; border-radius: 10px; height: 8px; transition: width 0.3s;"></div>
+                        </div>
+                    </div>`;
+                }
                 
-                // Update progress
-                const progress = Math.min(100, Math.round((templesWithDistance.length / window.divyaDesams.length) * 100));
-                results.innerHTML = `<div class="loading"><div class="loading-spinner"></div><p>Calculating road distances... ${progress}%</p></div>`;
-                
-                // Longer delay to avoid rate limiting
-                if (i + batchSize < window.divyaDesams.length) {
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                // Longer delay between batches to avoid rate limiting
+                if (i + batchSize < totalTemples) {
+                    console.log(`⏱️ Waiting 1 second before next batch to avoid rate limits...`);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             }
+            
+            console.log(`🎉 Distance calculation completed! Processed ${templesWithDistance.length}/${totalTemples} temples`);
+            const successCount = templesWithDistance.filter(t => !t.isEstimated).length;
+            const estimatedCount = templesWithDistance.filter(t => t.isEstimated).length;
+            console.log(`📊 Results: ${successCount} actual distances, ${estimatedCount} estimated distances`);
+            
             
             // Sort by distance and show results
             templesWithDistance.sort((a, b) => a.distance - b.distance);
             
             results.innerHTML = templesWithDistance.slice(0, 10).map(temple => {
                 const timings = getTempleTimings(temple);
+                const hours = timings && timings.hours && Array.isArray(timings.hours) ? timings.hours : ["Standard temple hours"];
                 return `
                 <div class="temple-card">
                     <div class="temple-name">${temple.displayName}</div>
@@ -1292,8 +1329,8 @@
                     </div>
                     <div style="margin: 8px 0; padding: 8px; background: rgba(102, 126, 234, 0.1); border-radius: 4px;">
                         <div style="font-weight: 500; color: #667eea; font-size: 0.85rem; margin-bottom: 4px;">🕒 Temple Timings:</div>
-                        ${timings.hours.map(hour => `<div style="font-size: 0.8rem; margin: 2px 0;">${hour}</div>`).join('')}
-                        ${timings.note ? `<div style="font-size: 0.75rem; color: #e67e22; margin-top: 4px;">⚠️ ${timings.note}</div>` : ''}
+                        ${hours.map(hour => `<div style="font-size: 0.8rem; margin: 2px 0;">${hour}</div>`).join('')}
+                        ${timings && timings.note ? `<div style="font-size: 0.75rem; color: #e67e22; margin-top: 4px;">⚠️ ${timings.note}</div>` : ''}
                     </div>
                     <div class="temple-distance">
                         Road Distance: <strong>${temple.distance.toFixed(1)} km</strong>
@@ -1541,22 +1578,22 @@
 
         // API configuration - Multiple providers for reliability
         const APIS = {
-            // Option 1: OpenRoute Service (Primary - 2000 free requests/day)
-            openroute: {
-                key: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6Ijg5OTQ4ZjIyNjdhNjRjMzM5ZjQzZGQ4ODViYjA1NDIwIiwiaCI6Im11cm11cjY0In0=',
-                url: 'https://api.openrouteservice.org/v2/directions/driving-car',
-                geocodeUrl: 'https://api.openrouteservice.org/geocode/search',
-                enabled: true // Primary API
-            },
-            // Option 2: HERE Maps (Secondary - Fallback with 500 requests/day limit)
+            // Option 1: HERE Maps (Primary - 500 requests/day limit)
             here: {
                 key: 'zKgxlEjQH_RLWBmqTViWQtVIBsxZZAQE0erZEsoMXuQ',
                 routeUrl: 'https://router.hereapi.com/v8/routes',
                 geocodeUrl: 'https://geocode.search.hereapi.com/v1/geocode',
-                enabled: true, // Fallback API
+                enabled: true, // Primary API
                 dailyLimit: 500, // Rate limit to 500 requests per day
                 callCount: 0, // Track daily usage
                 lastResetDate: new Date().toDateString() // Track when to reset counter
+            },
+            // Option 2: OpenRoute Service (Disabled - demo key giving 404 errors)
+            openroute: {
+                key: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6Ijg5OTQ4ZjIyNjdhNjRjMzM5ZjQzZGQ4ODViYjA1NDIwIiwiaCI6Im11cm11cjY0In0=',
+                url: 'https://api.openrouteservice.org/v2/directions/driving-car',
+                geocodeUrl: 'https://api.openrouteservice.org/geocode/search',
+                enabled: false // Disabled due to 404 errors with demo key
             },
             // Option 3: MapBox (CORS-friendly, 100k free requests/month)
             mapbox: {
@@ -1594,10 +1631,11 @@
         }
         
         // API Status Messages
-        if (APIS.openroute.enabled) {
-            console.log('✅ Primary API: OpenRoute Service (2000 requests/day)');
-            console.log('🔄 Fallback API: HERE Maps (500 requests/day limit)');
-            console.log('🗺️  APIs: OpenRoute → HERE Maps → Estimated distances');
+        if (APIS.here.enabled) {
+            console.log('✅ Primary API: HERE Maps (500 requests/day limit, India-focused)');
+            console.log('🔄 Fallback: OpenRoute Service (disabled - demo key issues)');
+            console.log('🗺️  APIs: HERE Maps → Estimated distances');
+            console.log('⚠️  OpenRoute Service disabled due to 404 errors with demo API key');
         }
         
         // Cache for storing route distances to avoid repeated API calls
@@ -1625,6 +1663,27 @@
             }
             
             return apiCallCount < MAX_API_CALLS_PER_MINUTE;
+        }
+        
+        // Add timeout to fetch requests
+        async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+            
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                return response;
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new Error('Request timeout after 15 seconds');
+                }
+                throw error;
+            }
         }
         
         // Get actual road distance using OpenRoute Service API
@@ -1661,13 +1720,47 @@
                 
                 let url, data;
                 
-                // Try OpenRoute Service first if enabled
+                // Try HERE Maps first if enabled and within daily limit
+                if (APIS.here.enabled && checkHereApiLimit()) {
+                    url = `${APIS.here.routeUrl}?transportMode=car&origin=${lat1},${lon1}&destination=${lat2},${lon2}&return=summary&apikey=${APIS.here.key}`;
+                    
+                    try {
+                        incrementHereApiUsage(); // Track usage
+                        const response = await fetchWithTimeout(url);
+                        if (!response.ok) {
+                            if (response.status === 429) {
+                                console.warn('HERE Maps rate limit exceeded, falling back to estimated distance');
+                                return calculateEstimatedRoadDistance(lat1, lon1, lat2, lon2);
+                            }
+                            throw new Error(`HERE Maps HTTP error! status: ${response.status}`);
+                        }
+                        data = await response.json();
+                        
+                        if (data.routes && data.routes[0] && data.routes[0].sections) {
+                            const distanceMeters = data.routes[0].sections[0].summary.length;
+                            const distanceKm = distanceMeters / 1000;
+                            
+                            // Cache the result
+                            routeCache.set(cacheKey, distanceKm);
+                            return distanceKm;
+                        } else {
+                            throw new Error('Invalid HERE Maps response format');
+                        }
+                    } catch (hereError) {
+                        console.warn('HERE Maps failed, trying fallback APIs:', hereError);
+                        // Continue to fallback APIs below
+                    }
+                } else if (APIS.here.enabled && !checkHereApiLimit()) {
+                    console.warn(`⚠️ HERE Maps daily limit reached (${APIS.here.dailyLimit} calls), using estimated distance`);
+                }
+                
+                // Try OpenRoute Service as fallback if enabled
                 if (APIS.openroute.enabled) {
                     url = `${APIS.openroute.url}?api_key=${APIS.openroute.key}&start=${lon1},${lat1}&end=${lon2},${lat2}`;
                     
                     try {
-                        // Try direct API call first
-                        const response = await fetch(url);
+                        // Try direct API call first with timeout
+                        const response = await fetchWithTimeout(url);
                         if (response.ok) {
                             data = await response.json();
                             
@@ -1712,41 +1805,6 @@
                     }
                 }
                 
-                // Fallback to HERE Maps if OpenRoute fails and daily limit allows
-                if (APIS.here.enabled && checkHereApiLimit()) {
-                    url = `${APIS.here.routeUrl}?transportMode=car&origin=${lat1},${lon1}&destination=${lat2},${lon2}&return=summary&apikey=${APIS.here.key}`;
-                    
-                    try {
-                        incrementHereApiUsage(); // Track usage
-                        const response = await fetch(url);
-                        if (!response.ok) {
-                            if (response.status === 429) {
-                                console.warn('HERE Maps rate limit exceeded, falling back to estimated distance');
-                                return calculateEstimatedRoadDistance(lat1, lon1, lat2, lon2);
-                            }
-                            throw new Error(`HERE Maps HTTP error! status: ${response.status}`);
-                        }
-                        data = await response.json();
-                        
-                        if (data.routes && data.routes[0] && data.routes[0].sections) {
-                            const distanceMeters = data.routes[0].sections[0].summary.length;
-                            const distanceKm = distanceMeters / 1000;
-                            
-                            console.log(`📍 Using HERE Maps fallback (${APIS.here.callCount}/${APIS.here.dailyLimit} calls today)`);
-                            
-                            // Cache the result
-                            routeCache.set(cacheKey, distanceKm);
-                            return distanceKm;
-                        } else {
-                            throw new Error('Invalid HERE Maps response format');
-                        }
-                    } catch (hereError) {
-                        console.warn('HERE Maps fallback failed:', hereError);
-                    }
-                } else if (APIS.here.enabled && !checkHereApiLimit()) {
-                    console.warn(`⚠️ HERE Maps daily limit reached (${APIS.here.dailyLimit} calls), using estimated distance`);
-                }
-                
                 // If all APIs fail, fall back to estimated distance
                 throw new Error('All routing APIs failed or unavailable');
                 
@@ -1768,7 +1826,40 @@
             try {
                 let url, data;
                 
-                // Try OpenRoute Service first if enabled
+                // Try HERE Maps first if enabled and within daily limit (India-only)
+                if (APIS.here.enabled && checkHereApiLimit()) {
+                    // Limit to India using country code and bounding box
+                    const indiaBounds = '68.1766451354,7.96553477623,97.4025614766,35.4940095078'; // India bounding box
+                    url = `${APIS.here.geocodeUrl}?q=${encodeURIComponent(query)}&limit=5&in=countryCode:IND&in=bbox:${indiaBounds}&apikey=${APIS.here.key}`;
+                    
+                    try {
+                        incrementHereApiUsage(); // Track usage
+                        console.log('Trying HERE Maps geocoding (India only)...');
+                        const response = await fetchWithTimeout(url);
+                        if (response.ok) {
+                            data = await response.json();
+                            console.log(`✅ HERE Maps geocoding successful (${APIS.here.callCount}/${APIS.here.dailyLimit} calls today)`);
+                            
+                            return data.items.map(item => ({
+                                name: item.title,
+                                coordinates: [item.position.lng, item.position.lat], // [lon, lat]
+                                lat: item.position.lat,
+                                lng: item.position.lng,
+                                confidence: item.scoring ? item.scoring.queryScore : 0.8,
+                                type: item.resultType || 'unknown',
+                                address: item.address ? item.address.label : item.title
+                            }));
+                        } else {
+                            throw new Error('HERE Maps geocoding API failed');
+                        }
+                    } catch (hereError) {
+                        console.warn('HERE Maps geocoding failed, trying fallback:', hereError);
+                    }
+                } else if (APIS.here.enabled && !checkHereApiLimit()) {
+                    console.warn(`⚠️ HERE Maps daily limit reached (${APIS.here.dailyLimit} calls), trying OpenRoute fallback`);
+                }
+                
+                // Try OpenRoute Service as fallback if enabled
                 if (APIS.openroute.enabled) {
                     url = `${APIS.openroute.geocodeUrl}?api_key=${APIS.openroute.key}&text=${encodeURIComponent(query)}&size=5&boundary.country=IN`;
                     
@@ -1817,39 +1908,6 @@
                             console.warn('OpenRoute geocoding proxy also failed, trying HERE Maps...', proxyError);
                         }
                     }
-                }
-                
-                // Fallback to HERE Maps (India-only) if OpenRoute fails and daily limit allows
-                if (APIS.here.enabled && checkHereApiLimit()) {
-                    // Limit to India using country code and bounding box
-                    const indiaBounds = '68.1766451354,7.96553477623,97.4025614766,35.4940095078'; // India bounding box
-                    url = `${APIS.here.geocodeUrl}?q=${encodeURIComponent(query)}&limit=5&in=countryCode:IND&in=bbox:${indiaBounds}&apikey=${APIS.here.key}`;
-                    
-                    try {
-                        incrementHereApiUsage(); // Track usage
-                        console.log('Trying HERE Maps geocoding (India only)...');
-                        const response = await fetch(url);
-                        if (response.ok) {
-                            data = await response.json();
-                            console.log(`✅ HERE Maps geocoding successful (${APIS.here.callCount}/${APIS.here.dailyLimit} calls today)`);
-                            
-                            return data.items.map(item => ({
-                                name: item.title,
-                                coordinates: [item.position.lng, item.position.lat], // [lon, lat]
-                                lat: item.position.lat,
-                                lng: item.position.lng,
-                                confidence: item.scoring ? item.scoring.queryScore : 0.8,
-                                type: item.resultType || 'unknown',
-                                address: item.address ? item.address.label : item.title
-                            }));
-                        } else {
-                            throw new Error('HERE Maps geocoding API failed');
-                        }
-                    } catch (hereError) {
-                        console.warn('HERE Maps geocoding fallback failed:', hereError);
-                    }
-                } else if (APIS.here.enabled && !checkHereApiLimit()) {
-                    console.warn(`⚠️ HERE Maps daily limit reached (${APIS.here.dailyLimit} calls), geocoding unavailable`);
                 }
                 
                 // If all geocoding APIs fail
