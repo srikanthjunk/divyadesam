@@ -6,10 +6,12 @@
 const fs = require('fs');
 
 // Google Places API key for getting real temple timings
-const GOOGLE_PLACES_API_KEY = 'AIzaSyASox7OA9rmW14VrCGxGKWBv34rtwnxhMw';
+// Set your API key as environment variable: export GOOGLE_PLACES_API_KEY=your_key_here
+const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY || 'YOUR_GOOGLE_PLACES_API_KEY';
 
 // Alternative: Use HERE Maps Places API (which we already have access to)
-const HERE_API_KEY = 'zKgxlEjQH_RLWBmqTViWQtVIBsxZZAQE0erZEsoMXuQ';
+// Set your API key as environment variable: export HERE_API_KEY=your_key_here
+const HERE_API_KEY = process.env.HERE_API_KEY || 'YOUR_HERE_API_KEY';
 
 // Read temple data
 function readTempleData() {

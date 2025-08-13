@@ -1638,10 +1638,23 @@ Version History:
         }
 
         // API configuration - Multiple providers for reliability
+        // API keys should be provided by users or set via environment variables
+        const getApiKey = (provider) => {
+            const stored = localStorage.getItem(`${provider}_api_key`);
+            if (stored) return stored;
+            
+            const key = prompt(`Enter your ${provider.toUpperCase()} API key (get from developer portal):`);
+            if (key) {
+                localStorage.setItem(`${provider}_api_key`, key);
+                return key;
+            }
+            return null;
+        };
+
         const APIS = {
             // Option 1: HERE Maps (Primary - 500 requests/day limit)
             here: {
-                key: 'zKgxlEjQH_RLWBmqTViWQtVIBsxZZAQE0erZEsoMXuQ',
+                key: getApiKey('here') || 'YOUR_HERE_API_KEY',
                 routeUrl: 'https://router.hereapi.com/v8/routes',
                 geocodeUrl: 'https://geocode.search.hereapi.com/v1/geocode',
                 enabled: true, // Primary API
