@@ -2,6 +2,8 @@
 <!--
 Divya Desam Temple Locator
 Version History:
+- v3.0.3: Unified search - Both location search & route planner now use HERE Maps API for comprehensive coverage
+- v3.0.2: Enhanced location search with towns/villages + Fixed HERE Maps API parameters + Added temple towns to fallback
 - v3.0.1: Fixed location search + Added fallback to Indian cities list when API fails
 - v3.0.0: HERE Maps API integration + Optimized distance calculation (10 nearest only)
 - v2.2.0: Integrated temple timings + Location search functionality  
@@ -226,6 +228,36 @@ Version History:
             font-weight: 500;
         }
 
+        .autocomplete-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .suggestion {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+
+        .suggestion:hover {
+            background-color: #f8f9fa;
+        }
+
+        .suggestion:last-child {
+            border-bottom: none;
+        }
+
         .temple-card {
             background: white;
             border-radius: 15px;
@@ -445,7 +477,7 @@ Version History:
                             <input type="text" 
                                    id="locationSearch" 
                                    class="route-input" 
-                                   placeholder="Search for your city/location..."
+                                   placeholder="Search for your city, town, or location..."
                                    autocomplete="off">
                             <div id="locationSuggestions" class="autocomplete-suggestions"></div>
                         </div>
@@ -534,7 +566,7 @@ Version History:
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
     
     <!-- Temple Data -->
-    <script src="temple-data.js"></script>
+    <script src="temple-data.js?v=3.0.3"></script>
     
     <script>
         // Cities database with coordinates
@@ -1390,8 +1422,10 @@ Version History:
                 const input = document.getElementById(inputId);
                 const autocompleteList = document.getElementById(inputId.replace('Point', 'Autocomplete'));
                 
-                input.addEventListener('input', function() {
-                    const value = this.value.toLowerCase();
+                let searchTimeout;
+                
+                input.addEventListener('input', async function() {
+                    const value = this.value.trim();
                     autocompleteList.innerHTML = '';
                     
                     if (value.length < 2) {
@@ -1399,54 +1433,55 @@ Version History:
                         return;
                     }
                     
-                    // Search in cities
-                    const cityMatches = cities.filter(city => 
-                        city.name.toLowerCase().includes(value) || 
-                        city.state.toLowerCase().includes(value)
-                    ).map(city => ({
-                        ...city,
-                        type: 'city',
-                        searchName: city.name,
-                        searchDescription: city.state
-                    }));
-                    
-                    // Search in temple names and locations
-                    const templeMatches = window.divyaDesams.filter(temple => 
-                        temple.displayName.toLowerCase().includes(value) ||
-                        temple.name.toLowerCase().includes(value)
-                    ).map(temple => ({
-                        lat: temple.lat,
-                        lng: temple.lng,
-                        type: 'temple',
-                        searchName: temple.displayName,
-                        searchDescription: 'Divya Desam Temple'
-                    }));
-                    
-                    // Combine and limit results
-                    const allMatches = [...cityMatches, ...templeMatches];
-                    const matches = allMatches.slice(0, 8); // Show more results since we have temples too
-                    
-                    if (matches.length > 0) {
-                        autocompleteList.innerHTML = matches.map(item => `
-                            <div class="autocomplete-item" data-lat="${item.lat}" data-lng="${item.lng}" data-type="${item.type}">
-                                <span class="city-name">${item.searchName}</span>
-                                <span class="city-state ${item.type === 'temple' ? 'temple-type' : ''}">${item.searchDescription}</span>
-                            </div>
-                        `).join('');
-                        autocompleteList.classList.add('active');
-                        
-                        // Add click handlers
-                        autocompleteList.querySelectorAll('.autocomplete-item').forEach(item => {
-                            item.addEventListener('click', function() {
-                                input.value = this.querySelector('.city-name').textContent;
-                                input.dataset.lat = this.dataset.lat;
-                                input.dataset.lng = this.dataset.lng;
-                                autocompleteList.classList.remove('active');
-                            });
-                        });
-                    } else {
-                        autocompleteList.classList.remove('active');
-                    }
+                    // Debounce search requests
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(async () => {
+                        try {
+                            // Use the same HERE Maps API search as location search
+                            const results = await searchLocation(value);
+                            
+                            // Also include temple matches for route planning
+                            const templeMatches = window.divyaDesams.filter(temple => 
+                                temple.displayName.toLowerCase().includes(value.toLowerCase()) ||
+                                temple.name.toLowerCase().includes(value.toLowerCase())
+                            ).map(temple => ({
+                                name: temple.displayName,
+                                lat: temple.lat,
+                                lng: temple.lng,
+                                type: 'temple',
+                                address: 'Divya Desam Temple'
+                            }));
+                            
+                            const allMatches = [...results, ...templeMatches].slice(0, 8);
+                            
+                            if (allMatches.length > 0) {
+                                autocompleteList.innerHTML = allMatches.map(item => `
+                                    <div class="autocomplete-item" data-lat="${item.lat}" data-lng="${item.lng}" data-type="${item.type}">
+                                        <span class="city-name">${item.name}</span>
+                                        <span class="city-state ${item.type === 'temple' ? 'temple-type' : ''}">${item.type === 'temple' ? 'Divya Desam Temple' : item.address || item.type}</span>
+                                    </div>
+                                `).join('');
+                                autocompleteList.classList.add('active');
+                                
+                                // Add click handlers
+                                autocompleteList.querySelectorAll('.autocomplete-item').forEach(item => {
+                                    item.addEventListener('click', function() {
+                                        input.value = this.querySelector('.city-name').textContent;
+                                        input.dataset.lat = this.dataset.lat;
+                                        input.dataset.lng = this.dataset.lng;
+                                        autocompleteList.classList.remove('active');
+                                    });
+                                });
+                            } else {
+                                autocompleteList.innerHTML = '<div class="autocomplete-item">No locations found</div>';
+                                autocompleteList.classList.add('active');
+                            }
+                        } catch (error) {
+                            console.error('Route planner search error:', error);
+                            autocompleteList.innerHTML = '<div class="autocomplete-item">Search failed. Please try again.</div>';
+                            autocompleteList.classList.add('active');
+                        }
+                    }, 300);
                 });
                 
                 // Hide autocomplete when clicking outside
@@ -1789,7 +1824,7 @@ Version History:
             }
         }
         
-        // Fallback Indian cities for location search when APIs fail
+        // Fallback Indian cities and towns for location search when APIs fail
         const fallbackCities = [
             {name: "Chennai", lat: 13.0827, lng: 80.2707, state: "Tamil Nadu"},
             {name: "Mumbai", lat: 19.0760, lng: 72.8777, state: "Maharashtra"},
@@ -1810,7 +1845,13 @@ Version History:
             {name: "Erode", lat: 11.3410, lng: 77.7172, state: "Tamil Nadu"},
             {name: "Thanjavur", lat: 10.7870, lng: 79.1378, state: "Tamil Nadu"},
             {name: "Kanchipuram", lat: 12.8342, lng: 79.7036, state: "Tamil Nadu"},
-            {name: "Pondicherry", lat: 11.9416, lng: 79.8083, state: "Puducherry"}
+            {name: "Pondicherry", lat: 11.9416, lng: 79.8083, state: "Puducherry"},
+            {name: "Swamimalai", lat: 10.95967, lng: 79.33152, state: "Tamil Nadu"},
+            {name: "Kumbakonam", lat: 10.9601, lng: 79.3881, state: "Tamil Nadu"},
+            {name: "Mayiladuthurai", lat: 11.1029, lng: 79.6558, state: "Tamil Nadu"},
+            {name: "Chidambaram", lat: 11.3994, lng: 79.6947, state: "Tamil Nadu"},
+            {name: "Gangaikonda Cholapuram", lat: 11.2019, lng: 79.4428, state: "Tamil Nadu"},
+            {name: "Darasuram", lat: 11.0244, lng: 79.3342, state: "Tamil Nadu"}
         ];
         
         // Search in fallback cities list
@@ -1834,10 +1875,14 @@ Version History:
         
         // Location geocoding functions
         async function searchLocation(query) {
+            console.log('🔍 Location search for:', query);
             console.log('CAN_USE_API:', CAN_USE_API, 'Protocol:', window.location.protocol);
+            console.log('APIS.here.enabled:', APIS.here.enabled);
+            console.log('checkHereApiLimit():', checkHereApiLimit());
             
             if (!CAN_USE_API) {
-                throw new Error('Location search requires HTTPS connection');
+                console.warn('⚠️ HTTPS required for location search, falling back to cities list');
+                return searchInFallbackCities(query);
             }
             
             try {
@@ -1845,47 +1890,59 @@ Version History:
                 
                 // Try HERE Maps first if enabled and within daily limit (India-only)
                 if (APIS.here.enabled && checkHereApiLimit()) {
-                    // Limit to India using country code and bounding box
-                    const indiaBounds = '68.1766451354,7.96553477623,97.4025614766,35.4940095078'; // India bounding box
-                    url = `${APIS.here.geocodeUrl}?q=${encodeURIComponent(query)}&limit=5&in=countryCode:IND&in=bbox:${indiaBounds}&apikey=${APIS.here.key}`;
+                    // Search in India including cities, towns, villages and places
+                    url = `${APIS.here.geocodeUrl}?q=${encodeURIComponent(query)}&limit=10&in=countryCode:IND&types=area,city,place&apikey=${APIS.here.key}`;
                     
                     try {
                         incrementHereApiUsage(); // Track usage
-                        console.log('Trying HERE Maps geocoding (India only)...');
+                        console.log(`🌍 Trying HERE Maps geocoding for "${query}" (India only)...`);
+                        console.log(`📡 API URL: ${url}`);
+                        
                         const response = await fetchWithTimeout(url);
+                        console.log(`📊 HERE Maps response status: ${response.status}`);
+                        
                         if (response.ok) {
                             data = await response.json();
                             console.log(`✅ HERE Maps geocoding successful (${APIS.here.callCount}/${APIS.here.dailyLimit} calls today)`);
+                            console.log(`📍 Found ${data.items ? data.items.length : 0} results:`, data);
                             
-                            return data.items.map(item => ({
-                                name: item.title,
-                                coordinates: [item.position.lng, item.position.lat], // [lon, lat]
-                                lat: item.position.lat,
-                                lng: item.position.lng,
-                                confidence: item.scoring ? item.scoring.queryScore : 0.8,
-                                type: item.resultType || 'unknown',
-                                address: item.address ? item.address.label : item.title
-                            }));
+                            if (data.items && data.items.length > 0) {
+                                const results = data.items.map(item => ({
+                                    name: item.title,
+                                    coordinates: [item.position.lng, item.position.lat], // [lon, lat]
+                                    lat: item.position.lat,
+                                    lng: item.position.lng,
+                                    confidence: item.scoring ? item.scoring.queryScore : 0.8,
+                                    type: item.resultType || 'location',
+                                    address: item.address ? item.address.label : item.title
+                                }));
+                                console.log(`🎯 Returning ${results.length} HERE Maps results`);
+                                return results;
+                            } else {
+                                console.log('📭 HERE Maps returned no results, trying fallback');
+                            }
                         } else {
-                            throw new Error('HERE Maps geocoding API failed');
+                            console.warn(`❌ HERE Maps API error: ${response.status} ${response.statusText}`);
+                            const errorText = await response.text();
+                            console.warn('Error details:', errorText);
                         }
                     } catch (hereError) {
-                        console.warn('HERE Maps geocoding failed, trying fallback:', hereError);
+                        console.warn('HERE Maps geocoding failed:', hereError);
                     }
                 } else if (APIS.here.enabled && !checkHereApiLimit()) {
-                    console.warn(`⚠️ HERE Maps daily limit reached (${APIS.here.dailyLimit} calls), trying OpenRoute fallback`);
+                    console.warn(`⚠️ HERE Maps daily limit reached (${APIS.here.dailyLimit} calls), using fallback cities`);
                 }
                 
-                // OpenRoute Service disabled (demo key returns 404 errors)
-                console.log('⚠️ Skipping OpenRoute geocoding - disabled due to API issues');
-                
-                // Fallback to basic Indian cities list if APIs fail
+                // Fallback to basic Indian cities list if APIs fail or no results
                 console.log('🏙️ Using fallback Indian cities list for search');
-                return searchInFallbackCities(query);
+                const fallbackResults = searchInFallbackCities(query);
+                console.log(`🔄 Fallback found ${fallbackResults.length} results`);
+                return fallbackResults;
                 
             } catch (error) {
                 console.error('Location search failed:', error);
-                return [];
+                console.log('🏙️ Using fallback Indian cities list due to error');
+                return searchInFallbackCities(query);
             }
         }
 
@@ -2199,7 +2256,7 @@ Version History:
 
     <!-- Version info -->
     <div style="position: fixed; bottom: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; color: #666; z-index: 1000; border: 1px solid #ddd;">
-        v3.0.1 - Fixed Location Search + Fallback Cities
+        v3.0.3 - Unified Search + HERE Maps API for All Locations
     </div>
 </body>
 </html>
