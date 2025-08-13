@@ -1637,30 +1637,194 @@ Version History:
             return detour;
         }
 
-        // API configuration - Multiple providers for reliability
-        // API keys should be provided by users or set via environment variables
-        const getApiKey = (provider) => {
-            const stored = localStorage.getItem(`${provider}_api_key`);
-            if (stored) return stored;
-            
-            const key = prompt(`Enter your ${provider.toUpperCase()} API key (get from developer portal):`);
-            if (key) {
-                localStorage.setItem(`${provider}_api_key`, key);
-                return key;
+        // Simple XOR encryption for API keys (basic obfuscation)
+        function encryptDecrypt(text, key = 'divyadesam2024') {
+            let result = '';
+            for (let i = 0; i < text.length; i++) {
+                result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
             }
-            return null;
+            return result;
+        }
+
+        // Encrypted API keys (XOR encrypted - replace with your new keys)
+        const ENCRYPTED_KEYS = {
+            here: 'YOUR_ENCRYPTED_HERE_KEY', // Replace with encrypted HERE key
+            google: 'YOUR_ENCRYPTED_GOOGLE_KEY'  // Replace with encrypted Google key
         };
 
+        // Combined API usage limits (HERE Maps: 500/day, Google Places: ~100/day recommended)
+        const API_LIMITS = {
+            daily: 100, // Conservative limit to stay within Google's free tier
+            here_only: 400, // Use HERE for location search (higher limit)
+            warning_threshold: 80 // Warn when 80% used
+        };
+
+        // Decrypt API keys
+        function decryptKey(encryptedBase64) {
+            try {
+                const encrypted = atob(encryptedBase64);
+                return encryptDecrypt(encrypted);
+            } catch (e) {
+                console.error('Key decryption failed');
+                return null;
+            }
+        }
+
+        // Better approach: Usage tracking with automatic UI updates and circuit breaker pattern
+        class ApiUsageManager {
+            constructor() {
+                this.dailyLimit = API_LIMITS.daily;
+                this.warningThreshold = API_LIMITS.warning_threshold;
+                this.observers = []; // Observer pattern for UI updates
+            }
+
+            getUsageKey() {
+                return `api_usage_${new Date().toDateString()}`;
+            }
+
+            getDailyUsage() {
+                return parseInt(localStorage.getItem(this.getUsageKey()) || '0');
+            }
+
+            getRemainingCalls() {
+                return Math.max(0, this.dailyLimit - this.getDailyUsage());
+            }
+
+            isLimitReached() {
+                return this.getDailyUsage() >= this.dailyLimit;
+            }
+
+            isWarningLevel() {
+                return this.getDailyUsage() >= this.warningThreshold;
+            }
+
+            // Circuit breaker: Pre-check before making API call
+            canMakeApiCall() {
+                if (this.isLimitReached()) {
+                    this.notifyLimitReached();
+                    throw new Error(`Daily API limit reached (${this.getDailyUsage()}/${this.dailyLimit}). App disabled until tomorrow.`);
+                }
+                return true;
+            }
+
+            // Increment usage and notify all observers
+            incrementUsage() {
+                const newCount = this.getDailyUsage() + 1;
+                localStorage.setItem(this.getUsageKey(), newCount.toString());
+                
+                // Notify all observers (UI updates)
+                this.notifyObservers(newCount);
+                
+                // Log usage milestones
+                if (newCount % 10 === 0 || newCount >= this.warningThreshold) {
+                    console.log(`📊 API Usage: ${newCount}/${this.dailyLimit} calls used today`);
+                }
+
+                return newCount;
+            }
+
+            // Observer pattern for UI updates
+            addObserver(callback) {
+                this.observers.push(callback);
+            }
+
+            notifyObservers(newCount) {
+                this.observers.forEach(callback => callback(newCount, this.getRemainingCalls()));
+            }
+
+            notifyLimitReached() {
+                this.observers.forEach(callback => callback(this.dailyLimit, 0, true));
+            }
+        }
+
+        // Initialize usage manager
+        const USAGE_TRACKER = new ApiUsageManager();
+
+        // Check if app should be disabled
+        function checkAppStatus() {
+            if (USAGE_TRACKER.isLimitReached()) {
+                const errorDiv = document.getElementById('error');
+                if (errorDiv) {
+                    errorDiv.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <h3>🚫 Daily Limit Reached</h3>
+                            <p>The app has reached its daily limit of ${API_LIMITS.daily} API calls.</p>
+                            <p><strong>The app will reset tomorrow at midnight.</strong></p>
+                            <p>This helps manage API costs and ensures fair usage for all visitors.</p>
+                            <div style="margin-top: 15px; font-size: 0.9rem; color: #666;">
+                                Calls used today: ${USAGE_TRACKER.getDailyUsage()}/${API_LIMITS.daily}
+                            </div>
+                            <div style="font-size: 0.8rem; color: #999; margin-top: 5px;">
+                                Limit set to stay within Google Places API free tier ($200/month credit)
+                            </div>
+                        </div>
+                    `;
+                    errorDiv.style.display = 'block';
+                }
+                
+                // Disable main functionality
+                const buttons = document.querySelectorAll('.btn-locate, button');
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                });
+                
+                return false; // App disabled
+            }
+            return true; // App enabled
+        }
+
+        // Better approach: Observer-based usage display that updates automatically
+        function createUsageDisplayObserver() {
+            return function(usedCount, remainingCount, isLimitReached = false) {
+                const versionDiv = document.querySelector('div[style*="position: fixed"][style*="bottom: 10px"]');
+                if (!versionDiv) return;
+
+                if (isLimitReached) {
+                    // Show limit reached state
+                    versionDiv.innerHTML = `
+                        <div style="background: #ff6b6b; color: white; padding: 5px 10px;">
+                            🚫 v3.0.4 - DAILY LIMIT REACHED (${usedCount}/${API_LIMITS.daily})
+                            <div style="font-size: 0.7rem; margin-top: 2px;">
+                                Resets tomorrow at midnight
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Normal display with dynamic coloring
+                const warningColor = usedCount >= API_LIMITS.warning_threshold ? '#ff6b6b' : 
+                                   usedCount >= API_LIMITS.daily * 0.5 ? '#f39c12' : '#666';
+                
+                const warningIcon = usedCount >= API_LIMITS.warning_threshold ? ' ⚠️' : '';
+                
+                versionDiv.innerHTML = `
+                    v3.0.4 - Encrypted API + Usage: ${usedCount}/${API_LIMITS.daily} calls today
+                    <div style="font-size: 0.7rem; margin-top: 2px; color: ${warningColor}">
+                        ${remainingCount} calls remaining${warningIcon}
+                    </div>
+                `;
+            };
+        }
+
+        // Legacy function for manual updates (kept for compatibility)
+        function updateUsageDisplay() {
+            const observer = createUsageDisplayObserver();
+            observer(USAGE_TRACKER.getDailyUsage(), USAGE_TRACKER.getRemainingCalls());
+        }
+
         const APIS = {
-            // Option 1: HERE Maps (Primary - 500 requests/day limit)
+            // Option 1: HERE Maps (Primary with encrypted key and usage limits)
             here: {
-                key: getApiKey('here') || 'YOUR_HERE_API_KEY',
+                key: decryptKey(ENCRYPTED_KEYS.here),
                 routeUrl: 'https://router.hereapi.com/v8/routes',
                 geocodeUrl: 'https://geocode.search.hereapi.com/v1/geocode',
-                enabled: true, // Primary API
-                dailyLimit: 500, // Rate limit to 500 requests per day
-                callCount: 0, // Track daily usage
-                lastResetDate: new Date().toDateString() // Track when to reset counter
+                enabled: true,
+                dailyLimit: 500,
+                callCount: 0,
+                lastResetDate: new Date().toDateString()
             },
             // Option 2: OpenRoute Service (Disabled - demo key giving 404 errors)
             openroute: {
@@ -1790,12 +1954,16 @@ Version History:
                 
                 let url, data;
                 
+                // Circuit breaker: Check limit before making any API call
+                USAGE_TRACKER.canMakeApiCall();
+
                 // Try HERE Maps first if enabled and within daily limit
                 if (APIS.here.enabled && checkHereApiLimit()) {
                     url = `${APIS.here.routeUrl}?transportMode=car&origin=${lat1},${lon1}&destination=${lat2},${lon2}&return=summary&apikey=${APIS.here.key}`;
                     
                     try {
-                        incrementHereApiUsage(); // Track usage
+                        incrementHereApiUsage(); // Track HERE usage
+                        USAGE_TRACKER.incrementUsage(); // Track overall usage
                         const response = await fetchWithTimeout(url);
                         if (!response.ok) {
                             if (response.status === 429) {
@@ -1907,7 +2075,8 @@ Version History:
                     url = `${APIS.here.geocodeUrl}?q=${encodeURIComponent(query)}&limit=10&in=countryCode:IND&types=area,city,place&apikey=${APIS.here.key}`;
                     
                     try {
-                        incrementHereApiUsage(); // Track usage
+                        incrementHereApiUsage(); // Track HERE usage
+                        USAGE_TRACKER.incrementUsage(); // Track overall usage
                         console.log(`🌍 Trying HERE Maps geocoding for "${query}" (India only)...`);
                         console.log(`📡 API URL: ${url}`);
                         
@@ -2260,10 +2429,20 @@ Version History:
                 detourValue.textContent = this.value;
             });
             
-            // Initialize map and autocomplete
-            initMap();
-            setupAutocomplete();
-            setupLocationSearch();
+            // Setup automatic usage display updates using observer pattern
+            USAGE_TRACKER.addObserver(createUsageDisplayObserver());
+            
+            // Check app status and initialize
+            if (checkAppStatus()) {
+                initMap();
+                setupAutocomplete();
+                setupLocationSearch();
+                updateUsageDisplay(); // Initial display
+            } else {
+                console.log('App disabled due to daily limit');
+            }
+            
+            // Usage display now updates automatically on each API call via observer pattern
         });
     </script>
 
