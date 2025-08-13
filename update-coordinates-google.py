@@ -14,8 +14,12 @@ import sys
 from datetime import datetime
 
 # API Configuration
-GOOGLE_API_KEY = 'AIzaSyASox7OA9rmW14VrCGxGKWBv34rtwnxhMw'
-HERE_API_KEY = 'zKgxlEjQH_RLWBmqTViWQtVIBsxZZAQE0erZEsoMXuQ'  # Fallback
+# Set your API keys as environment variables:
+# export GOOGLE_API_KEY=your_google_key_here
+# export HERE_API_KEY=your_here_key_here
+import os
+GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY', 'YOUR_GOOGLE_API_KEY')
+HERE_API_KEY = os.environ.get('HERE_API_KEY', 'YOUR_HERE_API_KEY')
 
 def read_temple_data():
     """Read current temple data from temple-data.js"""
