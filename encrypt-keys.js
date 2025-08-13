@@ -36,7 +36,7 @@ function main() {
     console.log('🔐 API Key Encryption Utility');
     console.log('================================\n');
     
-    // Example usage - replace with your actual keys
+    // Replace with your actual API keys
     const HERE_API_KEY = 'YOUR_NEW_HERE_API_KEY';
     const GOOGLE_API_KEY = 'YOUR_NEW_GOOGLE_API_KEY';
     
