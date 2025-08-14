@@ -1137,19 +1137,25 @@ Version History:
         let userLocation = null;
 
         // Initialize map
-        function initMap() {
+        async function initMap() {
             map = L.map('map').setView([10.8505, 78.6967], 7);
             
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
 
-            // Add all temple markers
-            addTempleMarkers();
+            // Add all temple markers (wait for data to load)
+            await addTempleMarkers();
         }
 
         // Add temple markers to map
-        function addTempleMarkers() {
+        async function addTempleMarkers() {
+            // Ensure temple data is loaded
+            if (!window.divyaDesams || !Array.isArray(window.divyaDesams) || window.divyaDesams.length === 0) {
+                console.log('⏳ Temple data not ready for map markers, waiting...');
+                await waitForTempleData();
+            }
+            
             window.divyaDesams.forEach(temple => {
                 const marker = L.marker([temple.lat, temple.lng], {
                     icon: L.divIcon({
@@ -2544,9 +2550,9 @@ Version History:
             });
             
             // Wait for temple data to load, then initialize 
-            waitForTempleData().then(() => {
+            waitForTempleData().then(async () => {
                 // Initialize app (always enabled with free APIs!)
-                initMap();
+                await initMap();
                 setupAutocomplete();
                 setupLocationSearch();
                 console.log('🚀 App initialized successfully with free APIs!');
