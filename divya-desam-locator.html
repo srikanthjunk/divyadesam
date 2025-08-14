@@ -2340,20 +2340,33 @@ Version History:
         // Temple timings scraping functionality
         async function scrapeTempleTimings(templeName) {
             try {
-                const query = `${templeName} temple timings opening hours`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.google.com/search?q=${encodeURIComponent(query)}`)}`;
+                // Temporarily disable scraping due to CORS issues with allorigins.win
+                // Return fallback timing information instead
+                console.log(`Timings scraping temporarily disabled for ${templeName} - using fallback`);
                 
-                const response = await fetch(proxyUrl);
-                const data = await response.json();
-                const html = data.contents;
+                // Return standard temple timings as fallback
+                return {
+                    hours: "6:00 AM - 12:00 PM, 4:00 PM - 8:00 PM",
+                    note: "Typical timings - please verify with temple",
+                    source: "fallback"
+                };
                 
-                // Parse timing patterns from Google search results
-                const timings = parseGoogleTimings(html, templeName);
-                return timings;
+                // Original scraping code (disabled due to CORS):
+                // const query = `${templeName} temple timings opening hours`;
+                // const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.google.com/search?q=${encodeURIComponent(query)}`)}`;
+                // const response = await fetch(proxyUrl);
+                // const data = await response.json();
+                // const html = data.contents;
+                // const timings = parseGoogleTimings(html, templeName);
+                // return timings;
                 
             } catch (error) {
-                console.warn(`Failed to scrape timings for ${templeName}:`, error);
-                return null;
+                console.warn(`Failed to get timings for ${templeName}:`, error);
+                return {
+                    hours: "Please contact temple directly",
+                    note: "Timing information unavailable",
+                    source: "error"
+                };
             }
         }
         
