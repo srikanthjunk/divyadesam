@@ -1355,12 +1355,32 @@ Version History:
 
         // Simple function to get temple timings from pre-populated database
         function getTempleTimings(temple) {
-            const timingData = templeTimingsDB[temple.displayName];
+            // Try exact match first
+            let timingData = templeTimingsDB[temple.displayName];
+            
+            // If no exact match, try partial matching for common temple names
+            if (!timingData) {
+                const templeKeys = Object.keys(templeTimingsDB);
+                const matchingKey = templeKeys.find(key => 
+                    key.toLowerCase().includes(temple.displayName.toLowerCase()) ||
+                    temple.displayName.toLowerCase().includes(key.toLowerCase()) ||
+                    // Try matching just the core temple name without location
+                    key.toLowerCase().includes(temple.name?.toLowerCase() || '') ||
+                    (temple.name?.toLowerCase() || '').includes(key.toLowerCase())
+                );
+                if (matchingKey) {
+                    timingData = templeTimingsDB[matchingKey];
+                    console.log(`✅ Found timing match: "${temple.displayName}" -> "${matchingKey}"`);
+                } else {
+                    console.log(`⚠️ No timing data found for: "${temple.displayName}" (name: "${temple.name}")`);
+                }
+            }
+            
             if (timingData) {
                 return {
                     hours: timingData.hours,
                     phone: timingData.phone || null,
-                    note: timingData.note || null,
+                    note: timingData.note || timingData.website ? `${timingData.note || ''} ${timingData.website || ''}`.trim() : null,
                     status: timingData.status || 'available',
                     source: 'curated_database'
                 };
@@ -1369,9 +1389,9 @@ Version History:
             // For temples not in database, return typical temple hours
             return {
                 hours: ["Morning: 6:00 AM - 12:00 PM", "Evening: 4:00 PM - 8:00 PM"],
-                note: "Typical Hindu temple hours. Please verify locally for exact timings.",
-                status: 'typical',
-                source: 'general_pattern'
+                note: "Generic temple hours - please verify with temple for exact timings.",
+                status: 'generic',
+                source: 'fallback_pattern'
             };
         }
 
