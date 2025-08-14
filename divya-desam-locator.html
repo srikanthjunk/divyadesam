@@ -1459,14 +1459,10 @@ Version History:
             const results = document.getElementById('nearbyResults');
             results.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Finding nearest temples...</p></div>';
             
-            // Validate temple data is loaded
+            // Ensure temple data is loaded
             if (!window.divyaDesams || !Array.isArray(window.divyaDesams) || window.divyaDesams.length === 0) {
-                console.error('❌ Temple data not loaded:', {
-                    exists: !!window.divyaDesams,
-                    isArray: Array.isArray(window.divyaDesams),
-                    length: window.divyaDesams ? window.divyaDesams.length : 'undefined'
-                });
-                throw new Error('Temple data not loaded properly. Please refresh the page.');
+                console.log('⏳ Temple data not ready, waiting...');
+                await waitForTempleData();
             }
 
             console.log(`🚀 Finding nearest temples from ${window.divyaDesams.length} total temples`);
@@ -1633,6 +1629,11 @@ Version History:
                             // Use the same HERE Maps API search as location search
                             const results = await searchLocation(value);
                             
+                            // Ensure temple data is loaded before filtering
+                            if (!window.divyaDesams || !Array.isArray(window.divyaDesams) || window.divyaDesams.length === 0) {
+                                await waitForTempleData();
+                            }
+                            
                             // Also include temple matches for route planning
                             const templeMatches = window.divyaDesams.filter(temple => 
                                 temple.displayName.toLowerCase().includes(value.toLowerCase()) ||
@@ -1779,12 +1780,36 @@ Version History:
                 await waitForTempleData();
             }
             
+            // Step 1: Pre-filter temples by air distance to avoid checking all 108 temples
+            console.log(`🔍 Pre-filtering ${window.divyaDesams.length} temples by air distance...`);
+            const routeCenterLat = (start.lat + end.lat) / 2;
+            const routeCenterLng = (start.lng + end.lng) / 2;
+            const routeDistance = calculateDistance(start.lat, start.lng, end.lat, end.lng);
+            
+            // Only check temples within reasonable air distance from route center
+            const maxAirDistance = Math.max(50, routeDistance * 0.75); // At least 50km, or 75% of route distance
+            const candidateTemples = window.divyaDesams
+                .map(temple => ({
+                    ...temple,
+                    airDistanceFromCenter: calculateDistance(routeCenterLat, routeCenterLng, temple.lat, temple.lng)
+                }))
+                .filter(temple => temple.airDistanceFromCenter <= maxAirDistance)
+                .sort((a, b) => a.airDistanceFromCenter - b.airDistanceFromCenter)
+                .slice(0, 20); // Limit to top 20 candidates
+            
+            console.log(`✅ Filtered to ${candidateTemples.length} candidate temples (from ${window.divyaDesams.length} total)`);
+            
+            if (progressCallback) {
+                progressCallback(10, candidateTemples.length, candidateTemples.length);
+            }
+            
+            // Step 2: Calculate route detours only for candidate temples
             const templesWithDetour = [];
             const batchSize = 2; // Very small batches for route planning (3 API calls per temple)
-            const totalTemples = window.divyaDesams.length;
+            const totalCandidates = candidateTemples.length;
             
-            for (let i = 0; i < window.divyaDesams.length; i += batchSize) {
-                const batch = window.divyaDesams.slice(i, i + batchSize);
+            for (let i = 0; i < candidateTemples.length; i += batchSize) {
+                const batch = candidateTemples.slice(i, i + batchSize);
                 const batchPromises = batch.map(async temple => ({
                     ...temple,
                     detour: await calculateDetour(start, end, temple)
@@ -1793,14 +1818,15 @@ Version History:
                 const batchResults = await Promise.all(batchPromises);
                 templesWithDetour.push(...batchResults);
                 
-                // Update progress
-                const progress = Math.min(100, Math.round((templesWithDetour.length / totalTemples) * 100));
+                // Update progress (10% for filtering + 90% for route calculation)
+                const routeProgress = Math.min(90, Math.round((templesWithDetour.length / totalCandidates) * 90));
+                const totalProgress = 10 + routeProgress;
                 if (progressCallback) {
-                    progressCallback(progress, templesWithDetour.length, totalTemples);
+                    progressCallback(totalProgress, templesWithDetour.length, totalCandidates);
                 }
                 
                 // Longer delay to avoid rate limiting (route planning uses more API calls)
-                if (i + batchSize < window.divyaDesams.length) {
+                if (i + batchSize < candidateTemples.length) {
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             }
