@@ -1580,7 +1580,7 @@ Version History:
                                 (timings.currently_open ? '<span style="color: #28a745; margin-left: 5px;">OPEN NOW</span>' : '<span style="color: #dc3545; margin-left: 5px;">CLOSED</span>') 
                                 : ''}
                         </div>
-                        ${timings.hours.map(hour => `<div style="font-size: 0.8rem; margin: 2px 0;">${hour}</div>`).join('')}
+                        ${timings.hours && Array.isArray(timings.hours) ? timings.hours.map(hour => `<div style="font-size: 0.8rem; margin: 2px 0;">${hour}</div>`).join('') : ''}
                         ${timings.note ? `<div style="font-size: 0.75rem; color: ${statusColor}; margin-top: 4px; font-weight: 500;">${timings.note}</div>` : ''}
                         ${timings.phone ? `<div style="font-size: 0.75rem; color: #0066cc; margin-top: 4px;">📞 ${timings.phone}</div>` : ''}
                         ${timings.rating ? `<div style="font-size: 0.75rem; color: #f39c12; margin-top: 2px;">⭐ ${timings.rating}/5</div>` : ''}
@@ -1752,7 +1752,7 @@ Version History:
                                     </div>
                                     <div style="margin: 8px 0; padding: 8px; background: rgba(102, 126, 234, 0.1); border-radius: 4px;">
                                         <div style="font-weight: 500; color: #667eea; font-size: 0.85rem; margin-bottom: 4px;">🕒 Temple Timings:</div>
-                                        ${timings.hours.map(hour => `<div style="font-size: 0.8rem; margin: 2px 0;">${hour}</div>`).join('')}
+                                        ${timings.hours && Array.isArray(timings.hours) ? timings.hours.map(hour => `<div style="font-size: 0.8rem; margin: 2px 0;">${hour}</div>`).join('') : ''}
                                         ${timings.note ? `<div style="font-size: 0.75rem; color: #e67e22; margin-top: 4px;">⚠️ ${timings.note}</div>` : ''}
                                     </div>
                                     <div class="temple-distance">
@@ -2350,9 +2350,9 @@ Version History:
                 // Return fallback timing information instead
                 console.log(`Timings scraping temporarily disabled for ${templeName} - using fallback`);
                 
-                // Return standard temple timings as fallback
+                // Return standard temple timings as fallback (matching expected structure)
                 return {
-                    hours: "6:00 AM - 12:00 PM, 4:00 PM - 8:00 PM",
+                    hours: ["6:00 AM - 12:00 PM", "4:00 PM - 8:00 PM"],
                     note: "Typical timings - please verify with temple",
                     source: "fallback"
                 };
@@ -2369,7 +2369,7 @@ Version History:
             } catch (error) {
                 console.warn(`Failed to get timings for ${templeName}:`, error);
                 return {
-                    hours: "Please contact temple directly",
+                    hours: ["Please contact temple directly"],
                     note: "Timing information unavailable",
                     source: "error"
                 };
