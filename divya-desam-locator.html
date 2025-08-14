@@ -2442,7 +2442,7 @@ Version History:
         const timingsCache = new Map();
         
         // Get temple timings with caching
-        async function getTempleTimings(temple) {
+        async function scrapeAndCacheTempleTimings(temple) {
             const cacheKey = temple.name;
             
             // Check cache first
@@ -2468,7 +2468,7 @@ Version History:
                 const batch = temples.slice(i, i + batchSize);
                 
                 const batchPromises = batch.map(async temple => {
-                    const timings = await getTempleTimings(temple);
+                    const timings = await scrapeAndCacheTempleTimings(temple);
                     return {
                         ...temple,
                         timings: timings || {
