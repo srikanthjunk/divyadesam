@@ -2,6 +2,7 @@
 <!--
 Divya Desam Temple Locator
 Version History:
+- v3.2.4: Code quality improvements - Removed duplicate functions, fixed variable hoisting
 - v3.2.3: Route planner fix - Defined missing CAN_USE_API variable causing ReferenceError
 - v3.2.2: Route planner fix - Resolved JavaScript TypeError preventing route results display
 - v3.2.1: Critical bug fixes - Runtime errors, function conflicts, CORS issues, route optimization (20 candidates vs 108)
@@ -580,6 +581,9 @@ Version History:
     <script src="temple-data.js?v=3.0.3"></script>
     
     <script>
+        // API availability flag - Free APIs are always available
+        const CAN_USE_API = true;
+        
         // Cities database with coordinates
         const cities = [
             // Tamil Nadu
@@ -2850,7 +2854,7 @@ Version History:
                 baseUrl: 'https://nominatim.openstreetmap.org',
                 searchEndpoint: '/search',
                 reverseEndpoint: '/reverse',
-                userAgent: 'DivyaDesamLocator/3.2.3 (Temple Locator App)',
+                userAgent: 'DivyaDesamLocator/3.2.4 (Temple Locator App)',
                 enabled: true
             },
             // OSRM for routing - Completely free
@@ -2866,9 +2870,6 @@ Version History:
                 enabled: false // Will enable if OSRM fails
             }
         };
-
-        // API availability flag - Free APIs are always available
-        const CAN_USE_API = FREE_APIS.osrm.enabled;
 
         // Free API Helper Functions (No usage tracking needed!)
         
@@ -3078,10 +3079,6 @@ Version History:
         }
         
         // Get actual road distance using OpenRoute Service API
-        // Generate cache key for route
-        function getCacheKey(lat1, lon1, lat2, lon2) {
-            return `${lat1.toFixed(4)},${lon1.toFixed(4)}-${lat2.toFixed(4)},${lon2.toFixed(4)}`;
-        }
 
         async function getRealRoadDistance(lat1, lon1, lat2, lon2) {
             const cacheKey = getCacheKey(lat1, lon1, lat2, lon2);
@@ -3558,7 +3555,7 @@ Version History:
 
     <!-- Version info -->
     <div style="position: fixed; bottom: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; color: #666; z-index: 1000; border: 1px solid #ddd;">
-        v3.2.3 - FREE APIs: No Keys, No Limits, No Costs! (Nominatim + OSRM)
+        v3.2.4 - FREE APIs: No Keys, No Limits, No Costs! (Nominatim + OSRM)
     </div>
 </body>
 </html>
