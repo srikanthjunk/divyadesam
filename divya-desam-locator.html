@@ -2672,17 +2672,17 @@ Version History:
             const endInput = document.getElementById('endPoint');
             const detourRange = document.getElementById('detourRange');
             const loading = document.getElementById('routeLoading');
-            const error = document.getElementById('routeError');
+            const errorDiv = document.getElementById('routeError');
             const results = document.getElementById('routeResults');
             
             if (!startInput.dataset.lat || !endInput.dataset.lat) {
-                error.style.display = 'block';
-                error.textContent = 'Please select valid start and end locations from the suggestions.';
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = 'Please select valid start and end locations from the suggestions.';
                 return;
             }
             
             loading.style.display = 'block';
-            error.style.display = 'none';
+            errorDiv.style.display = 'none';
             results.innerHTML = '';
             
             const start = { lat: parseFloat(startInput.dataset.lat), lng: parseFloat(startInput.dataset.lng) };
@@ -2744,8 +2744,8 @@ Version History:
                     }
                 } catch (error) {
                     loading.style.display = 'none';
-                    error.style.display = 'block';
-                    error.textContent = 'Error calculating route distances. Please try again.';
+                    errorDiv.style.display = 'block';
+                    errorDiv.textContent = 'Error calculating route distances. Please try again.';
                     console.error('Route planning error:', error);
                 }
             })();
