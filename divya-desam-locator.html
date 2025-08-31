@@ -2,6 +2,7 @@
 <!--
 Divya Desam Temple Locator
 Version History:
+- v3.3.0: Enhanced temple search - Added direct temple search with autocomplete and tradition filtering
 - v3.2.5: Analytics integration - Added Google Tag Manager for usage tracking
 - v3.2.4: Code quality improvements - Removed duplicate functions, fixed variable hoisting
 - v3.2.3: Route planner fix - Defined missing CAN_USE_API variable causing ReferenceError
@@ -146,6 +147,29 @@ Version History:
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-color: transparent;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            margin: 0 5px 5px 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            color: #666;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
         }
 
         .tab-content {
@@ -510,6 +534,27 @@ Version History:
                         <button class="btn-locate" onclick="window.searchFromLocation()" style="margin-top: 10px; background: #28a745;">
                             🌍 Search from this location
                         </button>
+                    </div>
+                    
+                    <div style="margin: 15px 0; padding: 15px; border: 1px dashed #ff9800; border-radius: 8px; background: rgba(255, 152, 0, 0.05);">
+                        <p style="margin: 0 0 10px 0; font-size: 0.9rem; color: #666;">
+                            <strong>Or search temples directly:</strong> Find specific temples by name or tradition
+                        </p>
+                        <div class="autocomplete-container">
+                            <span class="input-icon">🏛️</span>
+                            <input type="text" 
+                                   id="templeSearch" 
+                                   class="route-input" 
+                                   placeholder="Search temples by name, deity, or tradition..."
+                                   autocomplete="off">
+                            <div id="templeSuggestions" class="autocomplete-list"></div>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <button class="filter-btn active" data-tradition="all" onclick="window.setTempleFilter('all')">All</button>
+                            <button class="filter-btn" data-tradition="divya-desam" onclick="window.setTempleFilter('divya-desam')">Divya Desam</button>
+                            <button class="filter-btn" data-tradition="paadal-petra" onclick="window.setTempleFilter('paadal-petra')">Paadal Petra</button>
+                            <button class="filter-btn" data-tradition="abhimana" onclick="window.setTempleFilter('abhimana')">Abhimana</button>
+                        </div>
                     </div>
                     
                     <div class="loading" id="loading" style="display:none;">
@@ -3331,6 +3376,171 @@ Version History:
                 loading.style.display = 'none';
             }
         };
+
+        // Temple autocomplete search functionality
+        let currentTempleFilter = 'all';
+
+        function setupTempleAutocomplete() {
+            const input = document.getElementById('templeSearch');
+            const suggestions = document.getElementById('templeSuggestions');
+            
+            if (!input || !suggestions) {
+                console.log('Temple search elements not found');
+                return;
+            }
+            
+            let searchTimeout;
+
+            input.addEventListener('input', function() {
+                const value = this.value.trim();
+                
+                if (value.length < 2) {
+                    suggestions.innerHTML = '';
+                    suggestions.classList.remove('active');
+                    return;
+                }
+
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    searchTemplesByName(value, currentTempleFilter);
+                }, 300);
+            });
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!input.contains(e.target) && !suggestions.contains(e.target)) {
+                    suggestions.classList.remove('active');
+                }
+            });
+        }
+
+        function searchTemplesByName(query, tradition) {
+            if (!window.divyaDesams || !Array.isArray(window.divyaDesams)) {
+                console.log('Temple data not loaded yet');
+                return;
+            }
+
+            const searchTerm = query.toLowerCase();
+            let filteredTemples = window.divyaDesams;
+
+            // Filter by tradition first
+            if (tradition !== 'all') {
+                filteredTemples = filteredTemples.filter(temple => {
+                    const templeRegion = (temple.region || '').toLowerCase();
+                    switch(tradition) {
+                        case 'divya-desam':
+                            return templeRegion.includes('chola') || templeRegion.includes('pandiya') || 
+                                   templeRegion.includes('malai') || templeRegion.includes('tonda') || 
+                                   templeRegion.includes('vaduga') || templeRegion.includes('vada');
+                        case 'paadal-petra':
+                            return temple.displayName.toLowerCase().includes('nathar') ||
+                                   temple.displayName.toLowerCase().includes('eswara') ||
+                                   (temple.perumal && temple.perumal.toLowerCase().includes('shiva'));
+                        case 'abhimana':
+                            return templeRegion.includes('abhimana') || 
+                                   temple.displayName.toLowerCase().includes('abhimana');
+                        default:
+                            return true;
+                    }
+                });
+            }
+
+            // Search in temple name, deity, and locality
+            const matches = filteredTemples.filter(temple => {
+                return temple.displayName.toLowerCase().includes(searchTerm) ||
+                       (temple.perumal || '').toLowerCase().includes(searchTerm) ||
+                       (temple.thaayaar || '').toLowerCase().includes(searchTerm) ||
+                       (temple.name || '').toLowerCase().includes(searchTerm);
+            }).slice(0, 8); // Limit results
+
+            displayTempleSearchResults(matches);
+        }
+
+        function displayTempleSearchResults(temples) {
+            const suggestions = document.getElementById('templeSuggestions');
+            
+            if (temples.length === 0) {
+                suggestions.innerHTML = '<div class="autocomplete-item">No temples found</div>';
+                suggestions.classList.add('active');
+                return;
+            }
+
+            const html = temples.map(temple => `
+                <div class="autocomplete-item" onclick="selectTemple('${temple.name}')" 
+                     data-lat="${temple.lat}" data-lng="${temple.lng}" data-name="${temple.displayName}">
+                    <div class="city-name">${temple.displayName}</div>
+                    <div class="city-state">${temple.perumal ? `🕉️ ${temple.perumal}` : ''} • ${temple.region || 'Sacred'}</div>
+                </div>
+            `).join('');
+
+            suggestions.innerHTML = html;
+            suggestions.classList.add('active');
+        }
+
+        window.selectTemple = function(templeName) {
+            const temple = window.divyaDesams.find(t => t.name === templeName);
+            if (temple) {
+                // Center map on temple
+                if (window.map) {
+                    window.map.setView([temple.lat, temple.lng], 13);
+                    
+                    // Add or update temple marker
+                    if (window.selectedTempleMarker) {
+                        window.map.removeLayer(window.selectedTempleMarker);
+                    }
+                    
+                    window.selectedTempleMarker = L.marker([temple.lat, temple.lng], {
+                        icon: L.divIcon({
+                            className: 'temple-marker-selected',
+                            html: '🏛️',
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 15]
+                        })
+                    }).addTo(window.map);
+                    
+                    // Show temple details
+                    displayTempleDetails(temple);
+                }
+                
+                // Clear search
+                document.getElementById('templeSearch').value = '';
+                document.getElementById('templeSuggestions').classList.remove('active');
+            }
+        };
+
+        window.setTempleFilter = function(tradition) {
+            currentTempleFilter = tradition;
+            
+            // Update button states
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-tradition="${tradition}"]`).classList.add('active');
+            
+            // Trigger search if there's input
+            const input = document.getElementById('templeSearch');
+            if (input && input.value.trim().length >= 2) {
+                searchTemplesByName(input.value.trim(), tradition);
+            }
+        };
+
+        function displayTempleDetails(temple) {
+            const details = `
+                <div style="background: white; border-radius: 10px; padding: 20px; margin: 20px 0; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                    <h3 style="color: #667eea; margin-bottom: 10px;">🏛️ ${temple.displayName}</h3>
+                    ${temple.perumal ? `<p><strong>🕉️ Deity:</strong> ${temple.perumal}</p>` : ''}
+                    ${temple.thaayaar ? `<p><strong>👑 Consort:</strong> ${temple.thaayaar}</p>` : ''}
+                    <p><strong>📍 Location:</strong> ${temple.locality || 'Unknown'}</p>
+                    ${temple.region ? `<p><strong>🗺️ Region:</strong> ${temple.region}</p>` : ''}
+                    <button onclick="window.open('${temple.link}', '_blank')" 
+                            style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin-top: 10px; cursor: pointer;">
+                        🧭 Get Directions
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('nearbyResults').innerHTML = details;
+        }
         
         // Temple timings scraping functionality
         async function scrapeTempleTimings(templeName) {
@@ -3544,6 +3754,7 @@ Version History:
                 await initMap();
                 setupAutocomplete();
                 setupLocationSearch();
+                setupTempleAutocomplete();
                 console.log('🚀 App initialized successfully with free APIs!');
             }).catch(error => {
                 console.error('❌ App initialization failed:', error);
