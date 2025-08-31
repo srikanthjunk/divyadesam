@@ -773,7 +773,7 @@ Version History:
             try {
                 const { data: temples, error } = await supabase
                     .from('temples')
-                    .select('name, locality, district, state, lat, lng, significance_tags, logistics, wikidata_qid')
+                    .select('name, slug, locality, district, state, lat, lng, significance_tags, logistics, wikidata_qid')
                     .order('name');
                     
                 if (error) {
@@ -793,29 +793,15 @@ Version History:
                     const searchQuery = `${temple.name} ${temple.locality} ${temple.state}`.trim();
                     const link = `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}`;
                     
-                    // Determine region/tradition based on comprehensive patterns
+                    // Determine region/tradition from slug (definitive source)
                     let region = 'Sacred Temple';
-                    const name = temple.name.toLowerCase();
-                    const locality = (temple.locality || '').toLowerCase();
+                    const slug = (temple.slug || '').toLowerCase();
                     
-                    // Divya Desam patterns (Vishnu temples)
-                    if (name.includes('perumal') || name.includes('ranganatha') || name.includes('venkateswara') || 
-                        name.includes('varadaraja') || name.includes('govindaraja') || name.includes('thirumala') ||
-                        name.includes('srinivasa') || name.includes('parthasarathy') || name.includes('narasimha') ||
-                        name.includes('rama') || name.includes('krishna') || name.includes('govinda') ||
-                        name.includes('tirupati') || name.includes('badrinath') || name.includes('dwarka')) {
+                    if (slug.includes('divya-desam')) {
                         region = 'Divya Desam';
-                    } 
-                    // Paadal Petra patterns (Shiva temples)
-                    else if (name.includes('nathar') || name.includes('eswara') || name.includes('eeswar') || 
-                             name.includes('lingeswara') || name.includes('mahadeva') || name.includes('siva') ||
-                             name.includes('shiva') || name.includes('ishwara') || name.includes('rudra') ||
-                             name.includes('sankara') || name.includes('maheshwara') || name.includes('kapaleeshwara') ||
-                             name.includes('temple') && !name.includes('perumal')) {
+                    } else if (slug.includes('paadal-petra')) {
                         region = 'Paadal Petra Sthalam';
-                    } 
-                    // Abhimana patterns
-                    else if (name.includes('abhimana') || locality.includes('abhimana')) {
+                    } else if (slug.includes('abhimana')) {
                         region = 'Abhimana Sthalam';
                     }
                     
