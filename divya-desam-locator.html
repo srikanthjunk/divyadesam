@@ -793,14 +793,29 @@ Version History:
                     const searchQuery = `${temple.name} ${temple.locality} ${temple.state}`.trim();
                     const link = `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}`;
                     
-                    // Determine region/tradition
+                    // Determine region/tradition based on comprehensive patterns
                     let region = 'Sacred Temple';
                     const name = temple.name.toLowerCase();
-                    if (name.includes('ranganatha') || name.includes('perumal') || name.includes('venkateswara')) {
+                    const locality = (temple.locality || '').toLowerCase();
+                    
+                    // Divya Desam patterns (Vishnu temples)
+                    if (name.includes('perumal') || name.includes('ranganatha') || name.includes('venkateswara') || 
+                        name.includes('varadaraja') || name.includes('govindaraja') || name.includes('thirumala') ||
+                        name.includes('srinivasa') || name.includes('parthasarathy') || name.includes('narasimha') ||
+                        name.includes('rama') || name.includes('krishna') || name.includes('govinda') ||
+                        name.includes('tirupati') || name.includes('badrinath') || name.includes('dwarka')) {
                         region = 'Divya Desam';
-                    } else if (name.includes('nathar') || name.includes('eswara') || name.includes('eeswar')) {
+                    } 
+                    // Paadal Petra patterns (Shiva temples)
+                    else if (name.includes('nathar') || name.includes('eswara') || name.includes('eeswar') || 
+                             name.includes('lingeswara') || name.includes('mahadeva') || name.includes('siva') ||
+                             name.includes('shiva') || name.includes('ishwara') || name.includes('rudra') ||
+                             name.includes('sankara') || name.includes('maheshwara') || name.includes('kapaleeshwara') ||
+                             name.includes('temple') && !name.includes('perumal')) {
                         region = 'Paadal Petra Sthalam';
-                    } else if (name.includes('abhimana')) {
+                    } 
+                    // Abhimana patterns
+                    else if (name.includes('abhimana') || locality.includes('abhimana')) {
                         region = 'Abhimana Sthalam';
                     }
                     
@@ -3514,16 +3529,11 @@ Version History:
                     const templeRegion = (temple.region || '').toLowerCase();
                     switch(tradition) {
                         case 'divya-desam':
-                            return templeRegion.includes('chola') || templeRegion.includes('pandiya') || 
-                                   templeRegion.includes('malai') || templeRegion.includes('tonda') || 
-                                   templeRegion.includes('vaduga') || templeRegion.includes('vada');
+                            return templeRegion === 'divya desam';
                         case 'paadal-petra':
-                            return temple.displayName.toLowerCase().includes('nathar') ||
-                                   temple.displayName.toLowerCase().includes('eswara') ||
-                                   (temple.perumal && temple.perumal.toLowerCase().includes('shiva'));
+                            return templeRegion === 'paadal petra sthalam';
                         case 'abhimana':
-                            return templeRegion.includes('abhimana') || 
-                                   temple.displayName.toLowerCase().includes('abhimana');
+                            return templeRegion === 'abhimana sthalam';
                         default:
                             return true;
                     }
