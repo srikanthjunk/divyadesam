@@ -2,6 +2,7 @@
 <!--
 Divya Desam Temple Locator
 Version History:
+- v3.3.1: Quick filters added - Open Now, With Info, Major Temples for better temple discovery
 - v3.3.0: Enhanced temple search - Added direct temple search with autocomplete and tradition filtering
 - v3.2.5: Analytics integration - Added Google Tag Manager for usage tracking
 - v3.2.4: Code quality improvements - Removed duplicate functions, fixed variable hoisting
@@ -170,6 +171,25 @@ Version History:
             background: #667eea;
             color: white;
             border-color: #667eea;
+        }
+
+        .quick-filter-btn {
+            padding: 6px 12px;
+            margin: 0 5px 5px 0;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 15px;
+            color: #495057;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .quick-filter-btn:hover {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+            transform: translateY(-1px);
         }
 
         .tab-content {
@@ -554,6 +574,12 @@ Version History:
                             <button class="filter-btn" data-tradition="divya-desam" onclick="window.setTempleFilter('divya-desam')">Divya Desam</button>
                             <button class="filter-btn" data-tradition="paadal-petra" onclick="window.setTempleFilter('paadal-petra')">Paadal Petra</button>
                             <button class="filter-btn" data-tradition="abhimana" onclick="window.setTempleFilter('abhimana')">Abhimana</button>
+                        </div>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ddd;">
+                            <p style="margin: 0 0 8px 0; font-size: 0.85rem; color: #666;">Quick Filters:</p>
+                            <button class="quick-filter-btn" onclick="window.showOpenTemples()">⏰ Open Now</button>
+                            <button class="quick-filter-btn" onclick="window.showTemplesWithTimings()">📞 With Info</button>
+                            <button class="quick-filter-btn" onclick="window.showMajorTemples()">⭐ Major Temples</button>
                         </div>
                     </div>
                     
@@ -3540,6 +3566,106 @@ Version History:
             `;
             
             document.getElementById('nearbyResults').innerHTML = details;
+        }
+
+        // Quick filter functions
+        window.showOpenTemples = function() {
+            console.log('⏰ Showing temples open now...');
+            
+            const now = new Date();
+            const currentHour = now.getHours();
+            
+            // Simple logic: most temples open 6 AM - 8 PM
+            if (currentHour >= 6 && currentHour <= 20) {
+                const openTemples = window.divyaDesams.filter(temple => {
+                    // Check if temple has timing data
+                    const timings = window.templeTimingsDB?.[temple.displayName]?.hours;
+                    if (timings) {
+                        // Parse timing data (simplified)
+                        return timings.some(period => {
+                            const morningMatch = period.match(/(\d+):(\d+)\s*AM.*?(\d+):(\d+)\s*PM/);
+                            if (morningMatch) {
+                                return currentHour >= 6 && currentHour <= 20; // Basic open hours
+                            }
+                            return true; // Default to open if timing format unclear
+                        });
+                    }
+                    return currentHour >= 6 && currentHour <= 20; // Default temple hours
+                }).slice(0, 20);
+                
+                displayFilteredTemples(openTemples, '⏰ Temples Open Now');
+            } else {
+                displayFilteredTemples([], '⏰ Most temples are closed at this hour (typically open 6 AM - 8 PM)');
+            }
+        };
+
+        window.showTemplesWithTimings = function() {
+            console.log('📞 Showing temples with contact info...');
+            
+            const templesWithInfo = window.divyaDesams.filter(temple => {
+                const timingData = window.templeTimingsDB?.[temple.displayName];
+                return timingData?.phone || timingData?.website || timingData?.hours;
+            }).slice(0, 20);
+            
+            displayFilteredTemples(templesWithInfo, '📞 Temples with Contact Information');
+        };
+
+        window.showMajorTemples = function() {
+            console.log('⭐ Showing major temples...');
+            
+            const majorTempleKeywords = [
+                'srirangam', 'tirupati', 'madurai', 'chidambaram', 'rameswaram',
+                'kanchipuram', 'thiruvannamalai', 'kumbakonam', 'thanjavur'
+            ];
+            
+            const majorTemples = window.divyaDesams.filter(temple => {
+                const templeName = temple.displayName.toLowerCase();
+                return majorTempleKeywords.some(keyword => templeName.includes(keyword)) ||
+                       temple.displayName.includes('Ranganatha') ||
+                       temple.displayName.includes('Venkateswara') ||
+                       temple.displayName.includes('Meenakshi') ||
+                       temple.displayName.includes('Nataraja');
+            }).slice(0, 15);
+            
+            displayFilteredTemples(majorTemples, '⭐ Major Sacred Temples');
+        };
+
+        function displayFilteredTemples(temples, title) {
+            const results = document.getElementById('nearbyResults');
+            
+            if (temples.length === 0) {
+                results.innerHTML = `
+                    <div style="background: white; border-radius: 10px; padding: 20px; text-align: center;">
+                        <h3>${title}</h3>
+                        <p>No temples found matching this filter.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const html = `
+                <div style="background: white; border-radius: 10px; padding: 20px; margin: 20px 0;">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">${title}</h3>
+                    <div style="display: grid; gap: 10px;">
+                        ${temples.map(temple => `
+                            <div style="border: 1px solid #eee; border-radius: 8px; padding: 15px; cursor: pointer; transition: all 0.2s ease;"
+                                 onclick="selectTemple('${temple.name}')" 
+                                 onmouseover="this.style.backgroundColor='#f8f9fa'; this.style.transform='translateY(-2px)'"
+                                 onmouseout="this.style.backgroundColor='white'; this.style.transform='translateY(0)'">
+                                <div style="font-weight: 600; color: #333; margin-bottom: 5px;">${temple.displayName}</div>
+                                <div style="font-size: 0.9rem; color: #666;">
+                                    ${temple.perumal ? `🕉️ ${temple.perumal}` : ''}${temple.perumal && temple.region ? ' • ' : ''}${temple.region || ''}
+                                </div>
+                                <div style="font-size: 0.85rem; color: #999; margin-top: 5px;">
+                                    📍 ${temple.locality || 'Location data available'}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            results.innerHTML = html;
         }
         
         // Temple timings scraping functionality
