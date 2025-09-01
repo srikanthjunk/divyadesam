@@ -1,0 +1,1 @@
+UPDATE temples SET lat = 12.9681225, lng = 79.9483335 WHERE name = 'Adhikesava Perumal';
