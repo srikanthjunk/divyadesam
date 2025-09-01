@@ -2,7 +2,8 @@
 <!--
 Divya Desam Temple Locator
 Version History:
-- v3.3.4: Supabase disabled - Temporarily disabled Supabase API due to auth issues, now loads directly from static temple-data.js for reliability</search>
+- v3.3.4: Supabase auth fix - Updated anon key and re-enabled Supabase API with robust fallback to static data</search>
+</search_and_replace></search>
 </search_and_replace>
 - v3.3.2: Full temple database access - Supabase API integration enables search across all 401 temples (108 Divya Desam + 264 Paadal Petra + 29 Abhimana)
 - v3.3.1: Quick filters added - Open Now, With Info, Major Temples for better temple discovery
@@ -765,7 +766,7 @@ Version History:
 
         // Supabase configuration for temple data
         const SUPABASE_URL = 'https://yxsnfxiebolatzhkhbyi.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5dHlncW9qd3pya2RxY3Jid2pmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjUwMTgwMTYsImV4cCI6MjA0MDU5NDAxNn0.nJswcJN1_0bNHJBQGe1-DPgDm2CKhIDBKFtw-f7tUOI';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4c25meGllYm9sYXR6aGtoYnlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1Nzk0NjYsImV4cCI6MjA3MjE1NTQ2Nn0.sx_tPbAiqg7yU16_sPghsoWQ6tBKz5k5vuiuJxe8_hg';
         
         // Initialize Supabase client
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -1427,18 +1428,25 @@ Version History:
 
         // Wait for temple data to load
         async function waitForTempleData() {
-            // Skip Supabase loading and go directly to static data
-            console.log('⚠️ Supabase temporarily disabled - loading static temple data...');
+            // Try to load from Supabase first
+            const supabaseLoaded = await loadAllTemplesFromSupabase();
 
-            // Load static temple data directly
-            const staticLoaded = await loadStaticTempleData();
-
-            if (staticLoaded && window.divyaDesams && window.divyaDesams.length > 0) {
-                console.log(`✅ Temple data loaded from static file:`, window.divyaDesams.length, 'temples');
+            if (supabaseLoaded && window.divyaDesams && window.divyaDesams.length > 0) {
+                console.log(`✅ Temple data loaded from Supabase:`, window.divyaDesams.length, 'temples');
                 return Promise.resolve();
             } else {
-                console.error('❌ Failed to load static temple data');
-                return Promise.reject(new Error('Temple data failed to load from static file. Please check your connection.'));
+                console.warn('⚠️ Supabase failed, trying fallback to static data...');
+
+                // Fallback to static temple data
+                const staticLoaded = await loadStaticTempleData();
+
+                if (staticLoaded && window.divyaDesams && window.divyaDesams.length > 0) {
+                    console.log(`✅ Temple data loaded from static file:`, window.divyaDesams.length, 'temples');
+                    return Promise.resolve();
+                } else {
+                    console.error('❌ Failed to load temple data from both Supabase and static file');
+                    return Promise.reject(new Error('Temple data failed to load from all sources. Please check your connection.'));
+                }
             }
         }
 
