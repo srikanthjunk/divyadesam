@@ -2,7 +2,8 @@
 <!--
 Divya Desam Temple Locator
 Version History:
-- v3.3.9: Added debug logs for temple search click and further refined deity/consort logic
+- v3.3.10: Added dedicated temple details page - clicking on temple search results now navigates to comprehensive temple information page
+ - v3.3.9: Added debug logs for temple search click and further refined deity/consort logic
 - v3.3.4: Supabase auth fix - Updated anon key and re-enabled Supabase API with robust fallback to static data
 - v3.3.2: Full temple database access - Supabase API integration enables search across all 401 temples (108 Divya Desam + 264 Paadal Petra + 29 Abhimana)
 - v3.3.1: Quick filters added - Open Now, With Info, Major Temples for better temple discovery
@@ -3713,47 +3714,11 @@ Version History:
         window.selectTemple = function(templeName) {
             const temple = window.divyaDesams.find(t => t.name === templeName);
             if (temple) {
-                console.log(`Attempting to select temple: ${temple.displayName}`);
-                console.log(`Temple coordinates: lat=${temple.lat}, lng=${temple.lng}`);
+                console.log(`Navigating to temple details page for: ${temple.displayName}`);
 
-                // Center map on temple
-                if (window.map) {
-                    if (typeof temple.lat === 'number' && typeof temple.lng === 'number' && !isNaN(temple.lat) && !isNaN(temple.lng)) {
-                        window.map.setView([temple.lat, temple.lng], 13);
-                        console.log(`Map view set to: [${temple.lat}, ${temple.lng}]`);
-                    } else {
-                        console.error(`❌ Cannot set map view for "${temple.displayName}" due to invalid coordinates: lat=${temple.lat}, lng=${temple.lng}`);
-                    }
-                    
-                    // Add or update temple marker
-                    if (window.selectedTempleMarker) {
-                        window.map.removeLayer(window.selectedTempleMarker);
-                    }
-                    
-                    // Defensive check for valid coordinates before creating marker
-                    if (typeof temple.lat === 'number' && typeof temple.lng === 'number' && !isNaN(temple.lat) && !isNaN(temple.lng)) {
-                        window.selectedTempleMarker = L.marker([temple.lat, temple.lng], {
-                            icon: L.divIcon({
-                                className: 'temple-marker-selected',
-                                html: '🏛️',
-                                iconSize: [30, 30],
-                                iconAnchor: [15, 15]
-                            })
-                        }).addTo(window.map);
-                        console.log(`Marker added for: ${temple.displayName}`);
-                    } else {
-                        console.warn(`⚠️ Skipping selected temple marker for "${temple.displayName}" due to invalid coordinates: lat=${temple.lat}, lng=${temple.lng}`);
-                    }
-                    
-                    // Show temple details
-                    displayTempleDetails(temple);
-                } else {
-                    console.error('❌ Map object (window.map) is not initialized.');
-                }
-                
-                // Clear search
-                document.getElementById('templeSearch').value = '';
-                document.getElementById('templeSuggestions').classList.remove('active');
+                // Navigate to temple details page with temple data
+                const templeData = encodeURIComponent(JSON.stringify(temple));
+                window.location.href = `temple-details.html?temple=${templeData}`;
             } else {
                 console.warn(`⚠️ Temple "${templeName}" not found in divyaDesams array.`);
             }
@@ -4131,7 +4096,7 @@ Version History:
 
     <!-- Version info -->
     <div style="position: fixed; bottom: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; color: #666; z-index: 1000; border: 1px solid #ddd;">
-        v3.3.9 - Created in memory of Kokila & RP Sarathy - Thanks to Nominatim & OSRM
+        v3.3.10 - Created in memory of Kokila & RP Sarathy - Thanks to Nominatim & OSRM
     </div>
 </body>
 </html>
