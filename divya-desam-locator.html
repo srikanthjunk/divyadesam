@@ -2,7 +2,7 @@
 <!--
 Divya Desam Temple Locator
 Version History:
-- v3.3.6: Fixes for null coordinates and CSS compatibility
+- v3.3.8: Further improved deity/consort extraction and map centering debug logs
 - v3.3.4: Supabase auth fix - Updated anon key and re-enabled Supabase API with robust fallback to static data
 - v3.3.2: Full temple database access - Supabase API integration enables search across all 401 temples (108 Divya Desam + 264 Paadal Petra + 29 Abhimana)
 - v3.3.1: Quick filters added - Open Now, With Info, Major Temples for better temple discovery
@@ -791,10 +791,69 @@ Version History:
                 window.divyaDesams = temples
                     .filter(temple => typeof temple.lat === 'number' && typeof temple.lng === 'number' && !isNaN(temple.lat) && !isNaN(temple.lng))
                     .map(temple => {
-                        // Extract deity from significance_tags
-                        let deity = 'Unknown';
-                        if (temple.significance_tags && Array.isArray(temple.significance_tags) && temple.significance_tags.length > 0) {
-                            deity = temple.significance_tags[0];
+                        // Extract deity and thaayaar from significance_tags or infer
+                        let perumal = 'Not specified';
+                        let thaayaar = 'Not specified';
+
+                        if (temple.significance_tags && Array.isArray(temple.significance_tags)) {
+                            const tags = temple.significance_tags.map(tag => tag.toLowerCase());
+                            
+                            // Look for common Perumal names
+                            if (tags.includes('vishnu') || tags.includes('perumal')) {
+                                perumal = 'Lord Vishnu';
+                            } else if (tags.includes('rama')) {
+                                perumal = 'Lord Rama';
+                            } else if (tags.includes('krishna')) {
+                                perumal = 'Lord Krishna';
+                            } else if (tags.includes('narasimha')) {
+                                perumal = 'Lord Narasimha';
+                            } else if (tags.includes('varaha')) {
+                                perumal = 'Lord Varaha';
+                            } else if (tags.includes('balaji') || tags.includes('venkateswara')) {
+                                perumal = 'Lord Venkateswara';
+                            } else if (tags.includes('ranganatha')) {
+                                perumal = 'Lord Ranganatha';
+                            } else if (tags.includes('parthasarathy')) {
+                                perumal = 'Lord Parthasarathy';
+                            } else if (tags.includes('sundareswarar')) { // For Meenakshi Sundareswarar
+                                perumal = 'Lord Sundareswarar';
+                            }
+                            
+                            // Look for common Thaayaar names
+                            if (tags.includes('lakshmi') || tags.includes('thaayaar')) {
+                                thaayaar = 'Goddess Lakshmi';
+                            } else if (tags.includes('sita')) {
+                                thaayaar = 'Goddess Sita';
+                            } else if (tags.includes('rukmini')) {
+                                thaayaar = 'Goddess Rukmini';
+                            } else if (tags.includes('padmavathi')) {
+                                thaayaar = 'Goddess Padmavathi';
+                            } else if (tags.includes('ranganayaki')) {
+                                thaayaar = 'Goddess Ranganayaki';
+                            } else if (tags.includes('meenakshi')) { // For Meenakshi Sundareswarar
+                                thaayaar = 'Goddess Meenakshi';
+                            }
+                            
+                            // If still generic, try to use the first tag as a fallback for Perumal
+                            if (perumal === 'Not specified' && temple.significance_tags.length > 0) {
+                                perumal = temple.significance_tags[0];
+                            }
+                        }
+
+                        // Attempt to infer from name if still 'Not specified'
+                        const lowerCaseName = temple.name.toLowerCase();
+                        if (perumal === 'Not specified') {
+                            if (lowerCaseName.includes('ranganatha')) perumal = 'Lord Ranganatha';
+                            else if (lowerCaseName.includes('venkateswara')) perumal = 'Lord Venkateswara';
+                            else if (lowerCaseName.includes('krishna')) perumal = 'Lord Krishna';
+                            else if (lowerCaseName.includes('rama')) perumal = 'Lord Rama';
+                            else if (lowerCaseName.includes('parthasarathy')) perumal = 'Lord Parthasarathy';
+                            else if (lowerCaseName.includes('sundareswarar')) perumal = 'Lord Sundareswarar';
+                        }
+                        if (thaayaar === 'Not specified') {
+                            if (lowerCaseName.includes('ranganayaki')) thaayaar = 'Goddess Ranganayaki';
+                            else if (lowerCaseName.includes('padmavathi')) thaayaar = 'Goddess Padmavathi';
+                            else if (lowerCaseName.includes('meenakshi')) thaayaar = 'Goddess Meenakshi';
                         }
                         
                         // Generate Google Maps link
@@ -819,8 +878,8 @@ Version History:
                             lat: temple.lat,
                             lng: temple.lng,
                             link: link,
-                            perumal: deity,
-                            thaayaar: null, // Can be enhanced later
+                            perumal: perumal,
+                            thaayaar: thaayaar,
                             locality: temple.locality,
                             district: temple.district,
                             state: temple.state,
@@ -3654,9 +3713,17 @@ Version History:
         window.selectTemple = function(templeName) {
             const temple = window.divyaDesams.find(t => t.name === templeName);
             if (temple) {
+                console.log(`Attempting to select temple: ${temple.displayName}`);
+                console.log(`Temple coordinates: lat=${temple.lat}, lng=${temple.lng}`);
+
                 // Center map on temple
                 if (window.map) {
-                    window.map.setView([temple.lat, temple.lng], 13);
+                    if (typeof temple.lat === 'number' && typeof temple.lng === 'number' && !isNaN(temple.lat) && !isNaN(temple.lng)) {
+                        window.map.setView([temple.lat, temple.lng], 13);
+                        console.log(`Map view set to: [${temple.lat}, ${temple.lng}]`);
+                    } else {
+                        console.error(`❌ Cannot set map view for "${temple.displayName}" due to invalid coordinates: lat=${temple.lat}, lng=${temple.lng}`);
+                    }
                     
                     // Add or update temple marker
                     if (window.selectedTempleMarker) {
@@ -3673,17 +3740,22 @@ Version History:
                                 iconAnchor: [15, 15]
                             })
                         }).addTo(window.map);
+                        console.log(`Marker added for: ${temple.displayName}`);
                     } else {
                         console.warn(`⚠️ Skipping selected temple marker for "${temple.displayName}" due to invalid coordinates: lat=${temple.lat}, lng=${temple.lng}`);
                     }
                     
                     // Show temple details
                     displayTempleDetails(temple);
+                } else {
+                    console.error('❌ Map object (window.map) is not initialized.');
                 }
                 
                 // Clear search
                 document.getElementById('templeSearch').value = '';
                 document.getElementById('templeSuggestions').classList.remove('active');
+            } else {
+                console.warn(`⚠️ Temple "${templeName}" not found in divyaDesams array.`);
             }
         };
 
@@ -4059,7 +4131,7 @@ Version History:
 
     <!-- Version info -->
     <div style="position: fixed; bottom: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; color: #666; z-index: 1000; border: 1px solid #ddd;">
-        v3.3.6 - Created in memory of Kokila & RP Sarathy - Thanks to Nominatim & OSRM
+        v3.3.8 - Created in memory of Kokila & RP Sarathy - Thanks to Nominatim & OSRM
     </div>
 </body>
 </html>
