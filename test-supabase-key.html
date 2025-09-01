@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Supabase Key</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Testing Supabase Anon Key</h1>
+    <div id="result"></div>
+
+    <script>
+        // Test the new anon key
+        const SUPABASE_URL = 'https://yxsnfxiebolatzhkhbyi.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4c25meGllYm9sYXR6aGtoYnlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1Nzk0NjYsImV4cCI6MjA3MjE1NTQ2Nn0.sx_tPbAiqg7yU16_sPghsoWQ6tBKz5k5vuiuJxe8_hg';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function testConnection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing connection...';
+
+            try {
+                // Try to fetch a small amount of data
+                const { data, error } = await supabase
+                    .from('temples')
+                    .select('name, locality')
+                    .limit(5);
+
+                if (error) {
+                    resultDiv.innerHTML = `<div style="color: red;">❌ Error: ${error.message}</div>`;
+                    console.error('Supabase error:', error);
+                } else {
+                    resultDiv.innerHTML = `
+                        <div style="color: green;">✅ Success! Connected to Supabase</div>
+                        <div>Sample data received: ${data.length} temples</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    console.log('Supabase connection successful:', data);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div style="color: red;">❌ Connection failed: ${error.message}</div>`;
+                console.error('Connection error:', error);
+            }
+        }
+
+        // Run test when page loads
+        window.onload = testConnection;
+    </script>
+</body>
+</html>
