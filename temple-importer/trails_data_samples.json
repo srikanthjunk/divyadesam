@@ -1,0 +1,126 @@
+{
+  "sample_trails": [
+    {
+      "name": "Pancha Ranga Kshetram",
+      "description": "The five sacred temples of Lord Ranganatha - most important Vishnu pilgrimage circuit",
+      "region": "South India",
+      "tradition": "Divya Desam",
+      "temples": [
+        {
+          "name": "Srirangam Ranganathaswamy Temple",
+          "position": 1,
+          "notes": "Adiranga - Primary temple of the circuit, largest temple complex in the world",
+          "day_number": 1,
+          "estimated_duration_hours": 6
+        },
+        {
+          "name": "Srirangapatna Ranganathaswamy Temple", 
+          "position": 2,
+          "notes": "Madhyaranga - Historic temple in Karnataka, former Mysore capital",
+          "day_number": 2,
+          "estimated_duration_hours": 3
+        },
+        {
+          "name": "Brahmarangam Temple",
+          "position": 3, 
+          "notes": "Third Ranga temple in the sacred circuit",
+          "day_number": 3,
+          "estimated_duration_hours": 2
+        }
+      ]
+    },
+    {
+      "name": "Nava Tirupati",
+      "description": "Nine sacred Vishnu temples in the Tirupati-Tirumala hills region",
+      "region": "Andhra Pradesh",
+      "tradition": "Divya Desam",
+      "temples": [
+        {
+          "name": "Tirupati Venkateswara Temple",
+          "position": 1,
+          "notes": "Main Tirumala temple - Govinda",
+          "day_number": 1,
+          "estimated_duration_hours": 8
+        },
+        {
+          "name": "Tiruchanur Alamelumanga Temple",
+          "position": 2,
+          "notes": "Padmavathi Devi temple - consort of Venkateswara",
+          "day_number": 1,
+          "estimated_duration_hours": 2
+        }
+      ]
+    },
+    {
+      "name": "Pancha Bootha Sthalams",
+      "description": "Five Shiva temples representing the five elements",
+      "region": "Tamil Nadu",
+      "tradition": "Paadal Petra Sthalams",
+      "temples": [
+        {
+          "name": "Thillai Natarajar Temple",
+          "position": 1,
+          "notes": "Space element (Akasha) - Cosmic dancer Nataraja",
+          "day_number": 1,
+          "estimated_duration_hours": 4
+        },
+        {
+          "name": "Jambukeswaram Temple",
+          "position": 2,
+          "notes": "Water element (Appu) - Underground water spring",
+          "day_number": 2, 
+          "estimated_duration_hours": 3
+        },
+        {
+          "name": "Arunachaleswarar Temple",
+          "position": 3,
+          "notes": "Fire element (Agni) - Sacred hill represents fire",
+          "day_number": 3,
+          "estimated_duration_hours": 5
+        },
+        {
+          "name": "Srikalahasteeswara Temple",
+          "position": 4,
+          "notes": "Air element (Vayu) - Flame flickers without wind",
+          "day_number": 4,
+          "estimated_duration_hours": 4
+        },
+        {
+          "name": "Ekambareswarar Temple",
+          "position": 5,
+          "notes": "Earth element (Prithvi) - Ancient mango tree",
+          "day_number": 5,
+          "estimated_duration_hours": 3
+        }
+      ]
+    }
+  ],
+  "linking_examples": [
+    {
+      "trail_name": "Pancha Ranga Kshetram",
+      "sql_commands": [
+        "-- Find trail and temple IDs",
+        "SELECT id FROM trails WHERE name = 'Pancha Ranga Kshetram';",
+        "SELECT id FROM temples WHERE name LIKE '%Srirangam%' AND name LIKE '%Ranganatha%';",
+        "",
+        "-- Link temples to trail",
+        "SELECT add_temple_to_trail(1, 456, 1, 1, 'Adiranga - Primary temple', false, 6);",
+        "SELECT add_temple_to_trail(1, 457, 2, 2, 'Madhyaranga - Karnataka temple', false, 3);"
+      ]
+    }
+  ],
+  "query_examples": [
+    {
+      "description": "Get all trails with temple counts",
+      "sql": "SELECT t.name, t.description, COUNT(tt.temple_id) as linked_temples FROM trails t LEFT JOIN temple_trails tt ON t.id = tt.trail_id GROUP BY t.id, t.name, t.description;"
+    },
+    {
+      "description": "Get temples in trail order",
+      "sql": "SELECT * FROM get_trail_temples(1) ORDER BY temple_position;"
+    },
+    {
+      "description": "Find trails containing specific temple",
+      "sql": "SELECT t.name, tt.position, tt.notes FROM trails t JOIN temple_trails tt ON t.id = tt.trail_id JOIN temples tmp ON tt.temple_id = tmp.id WHERE tmp.name LIKE '%Srirangam%';"
+    }
+  ]
+}
