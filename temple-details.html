@@ -399,9 +399,15 @@
             document.getElementById('temple-coordinates').textContent =
                 `${templeData.lat?.toFixed(4) || 'N/A'}, ${templeData.lng?.toFixed(4) || 'N/A'}`;
 
-            // Update directions link
+            // Update directions link with direct coordinates
             const directionsLink = document.getElementById('directions-link');
-            directionsLink.href = templeData.link || '#';
+            if (templeData.lat && templeData.lng) {
+                // Use direct coordinates for precise navigation
+                directionsLink.href = `https://www.google.com/maps/dir//${templeData.lat},${templeData.lng}`;
+            } else {
+                // Fallback to search if coordinates are missing
+                directionsLink.href = templeData.link || '#';
+            }
             directionsLink.target = '_blank';
         }
 
