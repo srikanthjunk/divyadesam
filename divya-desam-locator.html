@@ -1378,13 +1378,14 @@ Version History:
         async function waitForTempleData() {
             // Load temples from Supabase instead of static file
             const loaded = await loadAllTemplesFromSupabase();
-            
+
             if (loaded && window.divyaDesams && window.divyaDesams.length > 0) {
                 console.log(`✅ Temple data loaded from Supabase:`, window.divyaDesams.length, 'temples');
                 return Promise.resolve();
             } else {
                 console.error('❌ Failed to load temple data from Supabase');
                 return Promise.reject(new Error('Temple data failed to load. Please check connection.'));
+            }
         }
 
         // Comprehensive temple timings database - All 108 Divya Desam temples with real timing data from Gemini + Google Places API
@@ -3515,11 +3516,11 @@ Version History:
                     const templeRegion = (temple.region || '').toLowerCase();
                     switch(tradition) {
                         case 'divya-desam':
-                            return templeRegion === 'divya desam';
+                            return templeRegion === 'divya desam' || templeRegion === 'divya desam';
                         case 'paadal-petra':
-                            return templeRegion === 'paadal petra sthalam';
+                            return templeRegion === 'paadal petra sthalam' || templeRegion === 'paadal petra sthalam';
                         case 'abhimana':
-                            return templeRegion === 'abhimana sthalam';
+                            return templeRegion === 'abhimana sthalam' || templeRegion === 'abhimana sthalam';
                         default:
                             return true;
                     }
