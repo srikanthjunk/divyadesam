@@ -2,7 +2,7 @@
 <!--
 Divya Desam Temple Locator
 Version History:
-- v3.3.5: Complete coordinate coverage - Added precise coordinates for all 31 temples with null lat/lng values using Nominatim geocoding
+- v3.3.6: Fixes for null coordinates and CSS compatibility
 - v3.3.4: Supabase auth fix - Updated anon key and re-enabled Supabase API with robust fallback to static data
 - v3.3.2: Full temple database access - Supabase API integration enables search across all 401 temples (108 Divya Desam + 264 Paadal Petra + 29 Abhimana)
 - v3.3.1: Quick filters added - Open Now, With Info, Major Temples for better temple discovery
@@ -787,47 +787,49 @@ Version History:
                     return false;
                 }
                 
-                // Transform to expected format
-                window.divyaDesams = temples.map(temple => {
-                    // Extract deity from significance_tags
-                    let deity = 'Unknown';
-                    if (temple.significance_tags && Array.isArray(temple.significance_tags) && temple.significance_tags.length > 0) {
-                        deity = temple.significance_tags[0];
-                    }
-                    
-                    // Generate Google Maps link
-                    const searchQuery = `${temple.name} ${temple.locality} ${temple.state}`.trim();
-                    const link = `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}`;
-                    
-                    // Determine region/tradition from slug (definitive source)
-                    let region = 'Sacred Temple';
-                    const slug = (temple.slug || '').toLowerCase();
-                    
-                    if (slug.includes('divya-desam')) {
-                        region = 'Divya Desam';
-                    } else if (slug.includes('paadal-petra')) {
-                        region = 'Paadal Petra Sthalam';
-                    } else if (slug.includes('abhimana')) {
-                        region = 'Abhimana Sthalam';
-                    }
-                    
-                    return {
-                        name: temple.name,
-                        displayName: temple.name,
-                        lat: temple.lat,
-                        lng: temple.lng,
-                        link: link,
-                        perumal: deity,
-                        thaayaar: null, // Can be enhanced later
-                        locality: temple.locality,
-                        district: temple.district,
-                        state: temple.state,
-                        region: region,
-                        wikidata_qid: temple.wikidata_qid
-                    };
-                });
+                // Transform to expected format and filter out temples with invalid coordinates
+                window.divyaDesams = temples
+                    .filter(temple => typeof temple.lat === 'number' && typeof temple.lng === 'number' && !isNaN(temple.lat) && !isNaN(temple.lng))
+                    .map(temple => {
+                        // Extract deity from significance_tags
+                        let deity = 'Unknown';
+                        if (temple.significance_tags && Array.isArray(temple.significance_tags) && temple.significance_tags.length > 0) {
+                            deity = temple.significance_tags[0];
+                        }
+                        
+                        // Generate Google Maps link
+                        const searchQuery = `${temple.name} ${temple.locality} ${temple.state}`.trim();
+                        const link = `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}`;
+                        
+                        // Determine region/tradition from slug (definitive source)
+                        let region = 'Sacred Temple';
+                        const slug = (temple.slug || '').toLowerCase();
+                        
+                        if (slug.includes('divya-desam')) {
+                            region = 'Divya Desam';
+                        } else if (slug.includes('paadal-petra')) {
+                            region = 'Paadal Petra Sthalam';
+                        } else if (slug.includes('abhimana')) {
+                            region = 'Abhimana Sthalam';
+                        }
+                        
+                        return {
+                            name: temple.name,
+                            displayName: temple.name,
+                            lat: temple.lat,
+                            lng: temple.lng,
+                            link: link,
+                            perumal: deity,
+                            thaayaar: null, // Can be enhanced later
+                            locality: temple.locality,
+                            district: temple.district,
+                            state: temple.state,
+                            region: region,
+                            wikidata_qid: temple.wikidata_qid
+                        };
+                    });
                 
-                console.log(`✅ Loaded ${window.divyaDesams.length} temples from Supabase`);
+                console.log(`✅ Loaded ${window.divyaDesams.length} valid temples from Supabase`);
                 console.log(`📊 Breakdown: Tamil Nadu: ${window.divyaDesams.filter(t => t.state === 'Tamil Nadu').length}, Others: ${window.divyaDesams.filter(t => t.state !== 'Tamil Nadu').length}`);
                 
                 return true;
@@ -1327,23 +1329,44 @@ Version History:
                 await waitForTempleData();
             }
             
+            let validTemples = 0;
+            let skippedTemples = 0;
+
             window.divyaDesams.forEach(temple => {
-                const marker = L.marker([temple.lat, temple.lng], {
-                    icon: L.divIcon({
-                        className: 'temple-marker',
-                        html: '🛕',
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    })
-                }).addTo(map);
-                
-                marker.bindPopup(`
-                    <strong>${temple.displayName}</strong><br>
-                    <a href="${temple.link}" target="_blank" class="btn-navigate">Get Directions</a>
-                `);
-                
-                templeMarkers.push(marker);
+                // Skip temples with null coordinates
+                if (!temple.lat || !temple.lng || temple.lat === null || temple.lng === null) {
+                    console.warn(`⚠️ Skipping temple "${temple.displayName}" - null coordinates`);
+                    skippedTemples++;
+                    return;
+                }
+
+                try {
+                    const marker = L.marker([temple.lat, temple.lng], {
+                        icon: L.divIcon({
+                            className: 'temple-marker',
+                            html: '🛕',
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 15]
+                        })
+                    }).addTo(map);
+
+                    marker.bindPopup(`
+                        <strong>${temple.displayName}</strong><br>
+                        <a href="${temple.link}" target="_blank" class="btn-navigate">Get Directions</a>
+                    `);
+
+                    templeMarkers.push(marker);
+                    validTemples++;
+                } catch (error) {
+                    console.error(`❌ Failed to create marker for "${temple.displayName}":`, error);
+                    skippedTemples++;
+                }
             });
+
+            console.log(`✅ Added ${validTemples} temple markers to map`);
+            if (skippedTemples > 0) {
+                console.warn(`⚠️ Skipped ${skippedTemples} temples with invalid coordinates`);
+            }
         }
 
         // Check if all required data is loaded
@@ -2636,16 +2659,21 @@ Version History:
                 map.removeLayer(userMarker);
             }
             
-            userMarker = L.marker([location.lat, location.lng], {
-                icon: L.divIcon({
-                    className: 'user-marker',
-                    html: '📍',
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15]
-                })
-            }).addTo(map);
-            
-            userMarker.bindPopup('Your Location');
+            // Add user marker
+            if (location.lat !== null && location.lng !== null && !isNaN(location.lat) && !isNaN(location.lng)) {
+                userMarker = L.marker([location.lat, location.lng], {
+                    icon: L.divIcon({
+                        className: 'user-marker',
+                        html: '📍',
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    })
+                }).addTo(map);
+                
+                userMarker.bindPopup('Your Location');
+            } else {
+                console.warn(`⚠️ Skipping user marker due to invalid location coordinates: lat=${location.lat}, lng=${location.lng}`);
+            }
             
             // Show loading message while calculating distances
             const results = document.getElementById('nearbyResults');
@@ -2661,10 +2689,12 @@ Version History:
             
             // Step 1: Calculate air distance to all temples and find top 10 nearest
             console.log(`📐 Calculating air distances to all temples...`);
-            const templesWithAirDistance = window.divyaDesams.map(temple => ({
-                ...temple,
-                airDistance: calculateDistance(location.lat, location.lng, temple.lat, temple.lng)
-            }));
+            const templesWithAirDistance = window.divyaDesams
+                .filter(temple => temple.lat && temple.lng && temple.lat !== null && temple.lng !== null)
+                .map(temple => ({
+                    ...temple,
+                    airDistance: calculateDistance(location.lat, location.lng, temple.lat, temple.lng)
+                }));
             
             // Sort by air distance and take top 10
             templesWithAirDistance.sort((a, b) => a.airDistance - b.airDistance);
@@ -2981,6 +3011,7 @@ Version History:
             // Only check temples within reasonable air distance from route center
             const maxAirDistance = Math.max(50, routeDistance * 0.75); // At least 50km, or 75% of route distance
             const candidateTemples = window.divyaDesams
+                .filter(temple => temple.lat && temple.lng && temple.lat !== null && temple.lng !== null)
                 .map(temple => ({
                     ...temple,
                     airDistanceFromCenter: calculateDistance(routeCenterLat, routeCenterLng, temple.lat, temple.lng)
@@ -3632,14 +3663,19 @@ Version History:
                         window.map.removeLayer(window.selectedTempleMarker);
                     }
                     
-                    window.selectedTempleMarker = L.marker([temple.lat, temple.lng], {
-                        icon: L.divIcon({
-                            className: 'temple-marker-selected',
-                            html: '🏛️',
-                            iconSize: [30, 30],
-                            iconAnchor: [15, 15]
-                        })
-                    }).addTo(window.map);
+                    // Defensive check for valid coordinates before creating marker
+                    if (typeof temple.lat === 'number' && typeof temple.lng === 'number' && !isNaN(temple.lat) && !isNaN(temple.lng)) {
+                        window.selectedTempleMarker = L.marker([temple.lat, temple.lng], {
+                            icon: L.divIcon({
+                                className: 'temple-marker-selected',
+                                html: '🏛️',
+                                iconSize: [30, 30],
+                                iconAnchor: [15, 15]
+                            })
+                        }).addTo(window.map);
+                    } else {
+                        console.warn(`⚠️ Skipping selected temple marker for "${temple.displayName}" due to invalid coordinates: lat=${temple.lat}, lng=${temple.lng}`);
+                    }
                     
                     // Show temple details
                     displayTempleDetails(temple);
@@ -4023,7 +4059,7 @@ Version History:
 
     <!-- Version info -->
     <div style="position: fixed; bottom: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; color: #666; z-index: 1000; border: 1px solid #ddd;">
-        v3.3.5 - Created in memory of Kokila & RP Sarathy - Thanks to Nominatim & OSRM
+        v3.3.6 - Created in memory of Kokila & RP Sarathy - Thanks to Nominatim & OSRM
     </div>
 </body>
 </html>
