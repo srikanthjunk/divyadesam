@@ -2,7 +2,7 @@
 <!--
 Divya Desam Temple Locator
 Version History:
-- v3.3.8: Further improved deity/consort extraction and map centering debug logs
+- v3.3.9: Added debug logs for temple search click and further refined deity/consort logic
 - v3.3.4: Supabase auth fix - Updated anon key and re-enabled Supabase API with robust fallback to static data
 - v3.3.2: Full temple database access - Supabase API integration enables search across all 401 temples (108 Divya Desam + 264 Paadal Petra + 29 Abhimana)
 - v3.3.1: Quick filters added - Open Now, With Info, Major Temples for better temple discovery
@@ -3699,7 +3699,7 @@ Version History:
             }
 
             const html = temples.map(temple => `
-                <div class="autocomplete-item" onclick="selectTemple('${temple.name}')" 
+                <div class="autocomplete-item" onclick="console.log('Clicked temple: ${temple.name}'); selectTemple('${temple.name}')"
                      data-lat="${temple.lat}" data-lng="${temple.lng}" data-name="${temple.displayName}">
                     <div class="city-name">${temple.displayName}</div>
                     <div class="city-state">${temple.perumal ? `🕉️ ${temple.perumal}` : ''} • ${temple.region || 'Sacred'}</div>
@@ -4131,7 +4131,7 @@ Version History:
 
     <!-- Version info -->
     <div style="position: fixed; bottom: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; color: #666; z-index: 1000; border: 1px solid #ddd;">
-        v3.3.8 - Created in memory of Kokila & RP Sarathy - Thanks to Nominatim & OSRM
+        v3.3.9 - Created in memory of Kokila & RP Sarathy - Thanks to Nominatim & OSRM
     </div>
 </body>
 </html>
