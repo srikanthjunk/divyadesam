@@ -1,0 +1,92 @@
+[
+  {
+    "name": "Karpaganathar Temple",
+    "alt_names": ["Thiru Kadi Kulam Karpaganathar Temple", "Thiruvalanchuzhi Kabartheeswarar Temple"],
+    "locality": "Thiruvalanchuzhi",
+    "district": "Thanjavur",
+    "state": "Tamil Nadu",
+    "lat": 10.9575,
+    "lng": 79.3069
+  },
+  {
+    "name": "Somanathar Temple, Karaikkal",
+    "alt_names": ["Thiru Karaikkal Somanathar Temple", "Thiruvettakudy Somanathar Temple"],
+    "locality": "Thiruvettakudy",
+    "district": "Karaikal",
+    "state": "Puducherry",
+    "lat": 10.9793,
+    "lng": 79.8242
+  },
+  {
+    "name": "Vruddhapureeswarar Temple, Thiruppunavasal",
+    "alt_names": ["Thiru Punavayil Punavayil Nathar Temple", "Pazhampathinathar Temple"],
+    "locality": "Thiruppunavasal",
+    "district": "Pudukkottai",
+    "state": "Tamil Nadu",
+    "lat": 9.9316,
+    "lng": 79.1362
+  },
+  {
+    "name": "Kutram Poruttha Nathar Temple",
+    "alt_names": ["Thiru Karuppariyalur Kutram Poruttha Nathar Temple", "Aparadha Kshameswarar Temple"],
+    "locality": "Thalaignayiru",
+    "district": "Nagapattinam",
+    "state": "Tamil Nadu",
+    "lat": 11.159,
+    "lng": 79.805
+  },
+  {
+    "name": "Someswarar Temple, Kumbakonam",
+    "alt_names": ["Thiru Kudanthai Karonam Someswarar Temple", "Kudanthai Karonam"],
+    "locality": "Kumbakonam",
+    "district": "Thanjavur",
+    "state": "Tamil Nadu",
+    "lat": 10.9610,
+    "lng": 79.3802
+  },
+  {
+    "name": "Nageswarar Temple, Kumbakonam",
+    "alt_names": ["Thiru Kudanthai Keezhkottam Nageswarar Temple", "Kudanthai Keezhkottam"],
+    "locality": "Kumbakonam",
+    "district": "Thanjavur",
+    "state": "Tamil Nadu",
+    "lat": 10.9585,
+    "lng": 79.3752
+  },
+  {
+    "name": "Ulagalantha Perumal Temple, Kanchipuram",
+    "alt_names": ["Thiru Vinnagar Ulagalantha Perumal Temple", "Trivikrama Temple"],
+    "locality": "Kanchipuram",
+    "district": "Kanchipuram",
+    "state": "Tamil Nadu",
+    "lat": 12.83917,
+    "lng": 79.70500
+  },
+  {
+    "name": "Marutheeswarar Temple, Maruthampudur",
+    "alt_names": ["Thiru Maruthampudur Marutheeswarar Temple"],
+    "locality": "Maruthampudur",
+    "district": "Thiruvarur",
+    "state": "Tamil Nadu",
+    "lat": 10.46,
+    "lng": 79.62
+  },
+  {
+    "name": "Vanchinadhaswamy Temple",
+    "alt_names": ["Thiru Puthur Sree Vanchinadha Swamy Temple", "Srivanjiyam Temple"],
+    "locality": "Srivanchiyam",
+    "district": "Thiruvarur",
+    "state": "Tamil Nadu",
+    "lat": 10.9023,
+    "lng": 79.5369
+  },
+  {
+    "name": "Nallavur Nathar Temple",
+    "alt_names": ["Thiru Nallavur Nallavur Nathar Temple", "Kalyanasundareswarar Temple, Nallavur"],
+    "locality": "Nallavur",
+    "district": "Viluppuram",
+    "state": "Tamil Nadu",
+    "lat": 11.908,
+    "lng": 79.303
+  }
+]

@@ -2,7 +2,8 @@
 <!--
 Divya Desam Temple Locator
 Version History:
-- v3.3.3: Supabase URL fix - Updated to correct project URL (yxsnfxiebolatzhkhbyi.supabase.co) + Robust fallback mechanism for API failures
+- v3.3.4: Supabase disabled - Temporarily disabled Supabase API due to auth issues, now loads directly from static temple-data.js for reliability</search>
+</search_and_replace>
 - v3.3.2: Full temple database access - Supabase API integration enables search across all 401 temples (108 Divya Desam + 264 Paadal Petra + 29 Abhimana)
 - v3.3.1: Quick filters added - Open Now, With Info, Major Temples for better temple discovery
 - v3.3.0: Enhanced temple search - Added direct temple search with autocomplete and tradition filtering
@@ -1426,25 +1427,18 @@ Version History:
 
         // Wait for temple data to load
         async function waitForTempleData() {
-            // Try to load from Supabase first
-            const supabaseLoaded = await loadAllTemplesFromSupabase();
+            // Skip Supabase loading and go directly to static data
+            console.log('⚠️ Supabase temporarily disabled - loading static temple data...');
 
-            if (supabaseLoaded && window.divyaDesams && window.divyaDesams.length > 0) {
-                console.log(`✅ Temple data loaded from Supabase:`, window.divyaDesams.length, 'temples');
+            // Load static temple data directly
+            const staticLoaded = await loadStaticTempleData();
+
+            if (staticLoaded && window.divyaDesams && window.divyaDesams.length > 0) {
+                console.log(`✅ Temple data loaded from static file:`, window.divyaDesams.length, 'temples');
                 return Promise.resolve();
             } else {
-                console.warn('⚠️ Supabase failed, trying fallback to static data...');
-
-                // Fallback to static temple data
-                const staticLoaded = await loadStaticTempleData();
-
-                if (staticLoaded && window.divyaDesams && window.divyaDesams.length > 0) {
-                    console.log(`✅ Temple data loaded from static file:`, window.divyaDesams.length, 'temples');
-                    return Promise.resolve();
-                } else {
-                    console.error('❌ Failed to load temple data from both Supabase and static file');
-                    return Promise.reject(new Error('Temple data failed to load from all sources. Please check your connection.'));
-                }
+                console.error('❌ Failed to load static temple data');
+                return Promise.reject(new Error('Temple data failed to load from static file. Please check your connection.'));
             }
         }
 
@@ -4022,7 +4016,7 @@ Version History:
 
     <!-- Version info -->
     <div style="position: fixed; bottom: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; color: #666; z-index: 1000; border: 1px solid #ddd;">
-        v3.3.3 - Created in memory of Kokila & RP Sarathy - Thanks to Nominatim & OSRM
-    </div>
+        v3.3.4 - Created in memory of Kokila & RP Sarathy - Thanks to Nominatim & OSRM
+    </div></search>
 </body>
 </html>

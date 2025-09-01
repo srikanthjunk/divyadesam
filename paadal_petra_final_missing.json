@@ -1,0 +1,110 @@
+[
+  {
+    "name": "Aranyeswarar Temple, Keezhthirukkattuppalli",
+    "alt_names": ["Thirukattupalli Aranyeswarar Temple"],
+    "locality": "Keezhthirukkattuppalli",
+    "district": "Mayiladuthurai",
+    "state": "Tamil Nadu",
+    "lat": 11.171,
+    "lng": 79.834
+  },
+  {
+    "name": "Vardhamaneswaram Temple, Thirupugalur",
+    "alt_names": ["Thirupugalur Vardhamaneswaram Temple"],
+    "locality": "Thirupugalur",
+    "district": "Nagapattinam", 
+    "state": "Tamil Nadu",
+    "lat": 10.865,
+    "lng": 79.684
+  },
+  {
+    "name": "Vasishteswarar Temple, Thittai",
+    "alt_names": ["Thittai Vasishteswarar Temple"],
+    "locality": "Thittai",
+    "district": "Thanjavur",
+    "state": "Tamil Nadu",
+    "lat": 10.852,
+    "lng": 79.083
+  },
+  {
+    "name": "Punavayil Nathar Temple, Sethubavachatram",
+    "alt_names": ["Thiru Punavayil Punavayil Nathar Temple"],
+    "locality": "Sethubavachatram",
+    "district": "Thiruvarur",
+    "state": "Tamil Nadu",
+    "lat": 10.77,
+    "lng": 79.63
+  },
+  {
+    "name": "Thanthonriappar Temple, Akkur",
+    "alt_names": ["Thiru Aakkoor Thanthonriappar Temple"],
+    "locality": "Akkur",
+    "district": "Mayiladuthurai",
+    "state": "Tamil Nadu",
+    "lat": 11.15,
+    "lng": 79.6
+  },
+  {
+    "name": "Sree Vanchinadha Swamy Temple, Srivanchiyam",
+    "alt_names": ["Thiru Puthur Sree Vanchinadha Swamy Temple"],
+    "locality": "Srivanchiyam",
+    "district": "Thiruvarur",
+    "state": "Tamil Nadu",
+    "lat": 10.9023,
+    "lng": 79.5369
+  },
+  {
+    "name": "Murugan Temple, Thiruparankundram",
+    "alt_names": ["Thirupparankundram Murugan Temple"],
+    "locality": "Thiruparankundram",
+    "district": "Madurai",
+    "state": "Tamil Nadu",
+    "lat": 9.8714,
+    "lng": 78.0747
+  },
+  {
+    "name": "Meenakshi Sundareswarar Temple, Madurai",
+    "alt_names": ["Madurai Meenakshi Sundareswarar Temple"],
+    "locality": "Madurai",
+    "district": "Madurai",
+    "state": "Tamil Nadu",
+    "lat": 9.9195,
+    "lng": 78.1193
+  },
+  {
+    "name": "Arasaleeswarar Temple, Vada Thiruarasur",
+    "alt_names": ["Thiru Nilai Vada Thiruarasur Arasaleeswarar Temple"],
+    "locality": "Vada Thiruarasur",
+    "district": "Tiruvannamalai",
+    "state": "Tamil Nadu",
+    "lat": 12.23,
+    "lng": 79.32
+  },
+  {
+    "name": "Ooraleeswarar Temple, Thakkolam",
+    "alt_names": ["Thiru Ooral Ooraleeswarar Temple"],
+    "locality": "Thakkolam",
+    "district": "Kanchipuram",
+    "state": "Tamil Nadu",
+    "lat": 13.12,
+    "lng": 79.62
+  },
+  {
+    "name": "Amarnath Cave Temple",
+    "alt_names": ["Amarnath Cave Temple, Anantnag"],
+    "locality": "Anantnag",
+    "district": "Anantnag",
+    "state": "Jammu and Kashmir",
+    "lat": 34.1764,
+    "lng": 75.3107
+  },
+  {
+    "name": "Pashupatinath Temple",
+    "alt_names": ["Pashupatinath Temple, Kathmandu"],
+    "locality": "Kathmandu",
+    "district": "Kathmandu",
+    "state": "Nepal",
+    "lat": 27.7103,
+    "lng": 85.3222
+  }
+]
