@@ -1,0 +1,15 @@
+{
+  "name": "temple-importer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2.45.4",
+    "dotenv": "^16.4.5",
+    "got": "^14.4.8",
+    "p-limit": "^7.1.1",
+    "resend": "^6.0.2",
+    "slugify": "^1.6.6"
+  }
+}

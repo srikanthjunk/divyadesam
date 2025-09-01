@@ -1,0 +1,282 @@
+[
+  {
+    "name": "Hridayakamalanathar Temple, Valivalam",
+    "alt_names": [],
+    "locality": "Valivalam",
+    "district": "Thiruvarur",
+    "state": "Tamil Nadu",
+    "lat": 10.63,
+    "lng": 79.7
+  },
+  {
+    "name": "Kaichineswarar Temple, Kachanam",
+    "alt_names": [],
+    "locality": "Kachanam",
+    "district": "Thiruvarur",
+    "state": "Tamil Nadu",
+    "lat": 10.68,
+    "lng": 79.75
+  },
+  {
+    "name": "Jagadeeswarar Temple, Pereyil",
+    "alt_names": [],
+    "locality": "Koil Kannapur",
+    "district": "Thiruvarur",
+    "state": "Tamil Nadu",
+    "lat": 10.87,
+    "lng": 79.7
+  },
+  {
+    "name": "Sankaranyeswarar Temple, Thalaichangadu",
+    "alt_names": [],
+    "locality": "Thalaichangadu",
+    "district": "Mayiladuthurai",
+    "state": "Tamil Nadu",
+    "lat": 11.12,
+    "lng": 79.8
+  },
+  {
+    "name": "Brahmapureeswarar Temple, Manthai",
+    "alt_names": [],
+    "locality": "Thirunraiyur",
+    "district": "Mayiladuthurai",
+    "state": "Tamil Nadu",
+    "lat": 11.31,
+    "lng": 79.52
+  },
+  {
+    "name": "Pasupatheeswarar Temple, Thiruppalathurai",
+    "alt_names": [],
+    "locality": "Papanasam",
+    "district": "Thanjavur",
+    "state": "Tamil Nadu",
+    "lat": 10.93,
+    "lng": 79.27
+  },
+  {
+    "name": "Viswanathar Temple, Saathangudi",
+    "alt_names": [],
+    "locality": "Thiruchattimutram",
+    "district": "Thanjavur",
+    "state": "Tamil Nadu",
+    "lat": 10.94,
+    "lng": 79.28
+  },
+  {
+    "name": "Thanjapureeswarar Temple, Thanjavur",
+    "alt_names": [],
+    "locality": "Thanjavur",
+    "district": "Thanjavur",
+    "state": "Tamil Nadu",
+    "lat": 10.78,
+    "lng": 79.13
+  },
+  {
+    "name": "Karpaganathar Temple, Thirukkadikulam",
+    "alt_names": [],
+    "locality": "Thiruvalanchuzhi",
+    "district": "Thanjavur",
+    "state": "Tamil Nadu",
+    "lat": 10.95,
+    "lng": 79.3
+  },
+  {
+    "name": "Pushpavananathar Temple, Thirupuvanam",
+    "alt_names": [
+      "Thirupoovanam"
+    ],
+    "locality": "Thirubuvanam",
+    "district": "Sivaganga",
+    "state": "Tamil Nadu",
+    "lat": 9.85,
+    "lng": 78.27
+  },
+  {
+    "name": "Edakanathar Temple, Thiruvedagam",
+    "alt_names": [],
+    "locality": "Thiruvedagam",
+    "district": "Madurai",
+    "state": "Tamil Nadu",
+    "lat": 9.98,
+    "lng": 78.02
+  },
+  {
+    "name": "Subramanya Swamy Temple, Thiruparankundram",
+    "alt_names": [],
+    "locality": "Thiruparankundram",
+    "district": "Madurai",
+    "state": "Tamil Nadu",
+    "lat": 9.88,
+    "lng": 78.08
+  },
+  {
+    "name": "Aappudaiyar Temple, Sellur",
+    "alt_names": [
+      "Thiru Aappanoor"
+    ],
+    "locality": "Sellur",
+    "district": "Madurai",
+    "state": "Tamil Nadu",
+    "lat": 9.93,
+    "lng": 78.12
+  },
+  {
+    "name": "Imayil Nanmai Tharuvar Temple, Madurai",
+    "alt_names": [
+      "Thiruvalavai"
+    ],
+    "locality": "Madurai",
+    "district": "Madurai",
+    "state": "Tamil Nadu",
+    "lat": 9.919,
+    "lng": 78.119
+  },
+  {
+    "name": "Kutralanathar Temple, Courtallam",
+    "alt_names": [
+      "Thirukutralam"
+    ],
+    "locality": "Courtallam",
+    "district": "Tenkasi",
+    "state": "Tamil Nadu",
+    "lat": 8.9288,
+    "lng": 77.2691
+  },
+  {
+    "name": "Nellaiappar Temple, Tirunelveli",
+    "alt_names": [
+      "Thirunelveli"
+    ],
+    "locality": "Tirunelveli",
+    "district": "Tirunelveli",
+    "state": "Tamil Nadu",
+    "lat": 8.7296,
+    "lng": 77.6865
+  },
+  {
+    "name": "Kodunkundranathar Temple, Piranmalai",
+    "alt_names": [],
+    "locality": "Piranmalai",
+    "district": "Sivaganga",
+    "state": "Tamil Nadu",
+    "lat": 10.1,
+    "lng": 78.43
+  },
+  {
+    "name": "Thiruthalinathar Temple, Thirupputhur",
+    "alt_names": [],
+    "locality": "Thiruppathur",
+    "district": "Sivaganga",
+    "state": "Tamil Nadu",
+    "lat": 10.13,
+    "lng": 78.6
+  },
+  {
+    "name": "Kaleeswarar Temple, Kalaiyarkoil",
+    "alt_names": [],
+    "locality": "Kalayarkoil",
+    "district": "Sivaganga",
+    "state": "Tamil Nadu",
+    "lat": 9.83,
+    "lng": 78.62
+  },
+  {
+    "name": "Ramanathaswamy Temple, Rameswaram",
+    "alt_names": [],
+    "locality": "Rameswaram",
+    "district": "Ramanathapuram",
+    "state": "Tamil Nadu",
+    "lat": 9.2881,
+    "lng": 79.3174
+  },
+  {
+    "name": "Adhanathaswamy Temple, Thiruvadanai",
+    "alt_names": [],
+    "locality": "Thiruvadanai",
+    "district": "Ramanathapuram",
+    "state": "Tamil Nadu",
+    "lat": 9.77,
+    "lng": 78.92
+  },
+  {
+    "name": "Mangalanathaswamy Temple, Uthirakosamangai",
+    "alt_names": [],
+    "locality": "Uthirakosamangai",
+    "district": "Ramanathapuram",
+    "state": "Tamil Nadu",
+    "lat": 9.28,
+    "lng": 78.73
+  },
+  {
+    "name": "Avinasiappar Temple, Avinashi",
+    "alt_names": [],
+    "locality": "Avinashi",
+    "district": "Tiruppur",
+    "state": "Tamil Nadu",
+    "lat": 11.1687,
+    "lng": 77.1706
+  },
+  {
+    "name": "Muruganathaswamy Temple, Thirumuruganpoondi",
+    "alt_names": [],
+    "locality": "Thirumuruganpoondi",
+    "district": "Tiruppur",
+    "state": "Tamil Nadu",
+    "lat": 11.2,
+    "lng": 77.25
+  },
+  {
+    "name": "Nattatreeswarar Temple, Nanipalli",
+    "alt_names": [],
+    "locality": "Bhavani",
+    "district": "Erode",
+    "state": "Tamil Nadu",
+    "lat": 11.45,
+    "lng": 77.68
+  },
+  {
+    "name": "Magudeswarar Temple, Kodumudi",
+    "alt_names": [],
+    "locality": "Kodumudi",
+    "district": "Erode",
+    "state": "Tamil Nadu",
+    "lat": 11.08,
+    "lng": 77.88
+  },
+  {
+    "name": "Pasupatheeswarar Temple, Karur",
+    "alt_names": [],
+    "locality": "Karur",
+    "district": "Karur",
+    "state": "Tamil Nadu",
+    "lat": 10.95,
+    "lng": 78.08
+  },
+  {
+    "name": "Ardhanareeswarar Temple, Thiruchengodu",
+    "alt_names": [],
+    "locality": "Tiruchengode",
+    "district": "Namakkal",
+    "state": "Tamil Nadu",
+    "lat": 11.38,
+    "lng": 77.9
+  },
+  {
+    "name": "Vikirthanatheswarar Temple, Venjamangudalur",
+    "alt_names": [],
+    "locality": "Vellakoil",
+    "district": "Tiruppur",
+    "state": "Tamil Nadu",
+    "lat": 10.93,
+    "lng": 77.72
+  },
+  {
+    "name": "Veerattaneswarar Temple, Thiruvathigai",
+    "alt_names": [],
+    "locality": "Thiruvathigai",
+    "district": "Cuddalore",
+    "state": "Tamil Nadu",
+    "lat": 11.83,
+    "lng": 79.57
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "name": "divya-desam-gtm-setup",
+  "version": "1.0.0",
+  "description": "GTM API setup script for Divya Desam Temple Locator analytics",
+  "main": "gtm-setup-script.js",
+  "scripts": {
+    "setup-gtm": "node gtm-setup-script.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "googleapis": "^128.0.0"
+  },
+  "keywords": ["gtm", "analytics", "temple-locator", "divya-desam"],
+  "author": "Divya Desam Temple Locator",
+  "license": "MIT"
+}

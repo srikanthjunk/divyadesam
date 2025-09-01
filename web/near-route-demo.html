@@ -1,0 +1,39 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Near Route Demo</title>
+<button id="btn">Find near route</button>
+<pre id="out" style="margin-top:1rem;font-family:system-ui"></pre>
+
+<script type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  const supabase = createClient(
+    "https://yxsnfxiebolatzhkhbyi.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4c25meGllYm9sYXR6aGtoYnlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1Nzk0NjYsImV4cCI6MjA3MjE1NTQ2Nn0.sx_tPbAiqg7yU16_sPghsoWQ6tBKz5k5vuiuJxe8_hg"
+  );
+
+  async function runNearRoute() {
+    const line = {
+      type: "LineString",
+      coordinates: [
+        [80.2707, 13.0827],  // Chennai
+        [79.3881, 10.9601]   // Kumbakonam
+      ]
+    };
+
+    const { data, error } = await supabase.rpc("api_temples_near_route", {
+      line_geojson: line,
+      radius_km: 20,
+      traditions_filter: ["divya-desam", "abhimana"], // or null
+      pariharam_filter: null                           // or ["marriage"]
+    });
+
+    const out = document.getElementById("out");
+    out.textContent = error
+      ? "Error: " + error.message
+      : (data || []).map(r => `${r.distance_km.toFixed(1)} km — ${r.name} (${r.locality || ""}, ${r.state || ""})`).join("\n");
+  }
+
+  document.getElementById("btn").addEventListener("click", runNearRoute);
+</script>
+
