@@ -1,0 +1,47 @@
+# Environment Variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# API Keys and Secrets
+secrets/
+credentials/
+*.key
+*.pem
+*.cer
+*.crt
+*.p12
+*.pfx
+
+# Node modules
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build outputs
+dist/
+build/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Backup files
+*-backup-*
+*.backup
+*.bak
