@@ -714,10 +714,11 @@ Version History:
         };
 
         // Debug flag - set to false in production
-        const DEBUG = false;
-        const log = DEBUG ? log.bind(console) : () => {};
-        const logError = DEBUG ? logError.bind(console) : () => {};
-        const logWarn = DEBUG ? logWarn.bind(console) : () => {};
+        // Temporarily enabled for troubleshooting
+        const DEBUG = true;
+        const log = DEBUG ? console.log.bind(console) : () => {};
+        const logError = DEBUG ? console.error.bind(console) : () => {};
+        const logWarn = DEBUG ? console.warn.bind(console) : () => {};
 
         // API availability flag - Free APIs are always available
         const CAN_USE_API = true;
@@ -1719,18 +1720,29 @@ Version History:
                         try {
                             const lat = position.coords.latitude;
                             const lng = position.coords.longitude;
+                            log(`GPS coordinates received: ${lat}, ${lng}`);
+                            
                             if (!isValidCoordinates(lat, lng)) {
                                 throw new Error('Invalid GPS coordinates received');
                             }
+                            
+                            // Keep loading visible while processing
+                            loading.style.display = 'block';
+                            
+                            // Call the async function and wait for it to complete
                             await findNearestTemplesFromCoords(lat, lng);
-                        } catch (err) {
-                            error.textContent = handleError(err, 'Location processing failed. Please try again.');
-                            error.style.display = 'block';
-                        } finally {
+                            
+                            // Hide loading only after results are shown
                             loading.style.display = 'none';
+                        } catch (err) {
+                            logError('Error in findNearestTemples:', err);
+                            loading.style.display = 'none';
+                            error.style.display = 'block';
+                            error.textContent = handleError(err, 'Location processing failed. Please try again.');
                         }
                     },
                     err => {
+                        logError('Geolocation error:', err);
                         loading.style.display = 'none';
                         error.style.display = 'block';
                         error.textContent = 'Unable to get your location. Please enable location services or use location search below.';
@@ -1891,24 +1903,45 @@ Version History:
             // Sort by distance and show results
             templesWithDistance.sort((a, b) => a.distance - b.distance);
             
-            // Ensure temple timings are loaded
-            if (templeTimingsDB === null) {
-                await loadTempleTimings();
-            }
-            
             // Display results with temple timings - use helper function for safe rendering
-            const templeCards = await Promise.all(templesWithDistance.map(async temple => {
-                const timings = await getTempleTimings(temple);
-                return createTempleCard(temple, timings, {
-                    distance: temple.distance,
-                    isEstimated: temple.isEstimated
-                });
-            }));
-            
-            results.innerHTML = templeCards.join('');
+            try {
+                // Ensure temple timings are loaded
+                if (templeTimingsDB === null) {
+                    await loadTempleTimings();
+                }
+                
+                const templeCards = await Promise.all(templesWithDistance.map(async temple => {
+                    try {
+                        const timings = await getTempleTimings(temple);
+                        return createTempleCard(temple, timings, {
+                            distance: temple.distance,
+                            isEstimated: temple.isEstimated
+                        });
+                    } catch (err) {
+                        logError(`Error creating card for ${temple.displayName}:`, err);
+                        // Return a basic card even if timings fail
+                        return createTempleCard(temple, null, {
+                            distance: temple.distance,
+                            isEstimated: temple.isEstimated
+                        });
+                    }
+                }));
+                
+                results.innerHTML = templeCards.join('');
 
-            // Center map on user location
-            map.setView([location.lat, location.lng], 10);
+                // Center map on user location
+                map.setView([location.lat, location.lng], 10);
+                
+                log(`Successfully displayed ${templeCards.length} temples`);
+            } catch (err) {
+                logError('Error displaying temple results:', err);
+                results.innerHTML = `<div class="error-message" style="padding: 20px; text-align: center; color: #dc3545;">
+                    <h3>Error displaying results</h3>
+                    <p>${sanitizeHTML(err.message || 'An error occurred while displaying temples.')}</p>
+                    <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">Please try again.</p>
+                </div>`;
+                throw err; // Re-throw to be caught by caller
+            }
         }
 
         // Tab switching
