@@ -955,7 +955,10 @@ Version History:
         }
 
         // Temple data will be loaded from static file (all 401 temples)
-        window.divyaDesams = [];
+        // Only initialize if not already loaded by temple-data.js
+        if (!window.divyaDesams) {
+            window.divyaDesams = [];
+        }
         
         /**
          * Load temple timings from JSON file
