@@ -1675,23 +1675,43 @@ Version History:
          * @returns {Promise<void>}
          */
         async function findNearestTemplesFromCoords(lat, lng) {
-            // Validate coordinates
-            if (!isValidCoordinates(lat, lng)) {
-                logError('Invalid coordinates provided:', {lat, lng});
-                throw new Error('Invalid coordinates');
+            try {
+                log('=== findNearestTemplesFromCoords START ===');
+                log('Coordinates:', {lat, lng});
+                
+                // Validate coordinates
+                if (!isValidCoordinates(lat, lng)) {
+                    logError('Invalid coordinates provided:', {lat, lng});
+                    throw new Error('Invalid coordinates');
+                }
+                
+                log('Coordinates validated');
+                log('Temple data available:', window.divyaDesams ? window.divyaDesams.length : 'NOT LOADED');
+                
+                // Ensure temple data is loaded
+                if (!window.divyaDesams || !Array.isArray(window.divyaDesams) || window.divyaDesams.length === 0) {
+                    log('Temple data not ready, waiting...');
+                    await waitForTempleData();
+                    log('Temple data loaded:', window.divyaDesams.length);
+                }
+                
+                // Check if map is initialized
+                if (!map) {
+                    logError('Map not initialized!');
+                    throw new Error('Map not initialized. Please wait for the page to fully load.');
+                }
+                
+                userLocation = { lat, lng };
+                log('Calling showNearestTemples...');
+                await showNearestTemples(userLocation);
+                log('=== findNearestTemplesFromCoords SUCCESS ===');
+            } catch (error) {
+                logError('=== findNearestTemplesFromCoords ERROR ===');
+                logError('Error details:', error);
+                logError('Error message:', error.message);
+                logError('Error stack:', error.stack);
+                throw error; // Re-throw to be caught by caller
             }
-            
-            log('Finding temples from coordinates:', lat, lng);
-            log('Temple data available:', window.divyaDesams ? window.divyaDesams.length : 'NOT LOADED');
-            
-            // Ensure temple data is loaded
-            if (!window.divyaDesams || !Array.isArray(window.divyaDesams) || window.divyaDesams.length === 0) {
-                log('Temple data not ready, waiting...');
-                await waitForTempleData();
-            }
-            
-            userLocation = { lat, lng };
-            await showNearestTemples(userLocation);
         }
 
         /**
@@ -1734,11 +1754,17 @@ Version History:
                             
                             // Hide loading only after results are shown
                             loading.style.display = 'none';
+                            log('✅ Location processing completed successfully');
                         } catch (err) {
-                            logError('Error in findNearestTemples:', err);
+                            logError('❌ Error in findNearestTemples:', err);
+                            logError('Error type:', err.constructor.name);
+                            logError('Error message:', err.message);
+                            logError('Error stack:', err.stack);
                             loading.style.display = 'none';
                             error.style.display = 'block';
-                            error.textContent = handleError(err, 'Location processing failed. Please try again.');
+                            const errorMsg = err.message || 'Location processing failed. Please try again.';
+                            error.textContent = `${errorMsg} (Check console for details)`;
+                            console.error('Full error object:', err);
                         }
                     },
                     err => {
@@ -1786,35 +1812,54 @@ Version History:
          * @returns {Promise<void>}
          */
         async function showNearestTemples(location) {
-            // Validate location
-            if (!location || !isValidCoordinates(location.lat, location.lng)) {
-                logError('Invalid location in showNearestTemples');
-                throw new Error('Invalid location coordinates');
-            }
-            // Add user marker
-            if (userMarker) {
-                map.removeLayer(userMarker);
-            }
-            
-            // Add user marker
-            if (location.lat !== null && location.lng !== null && !isNaN(location.lat) && !isNaN(location.lng)) {
-                userMarker = L.marker([location.lat, location.lng], {
-                    icon: L.divIcon({
-                        className: 'user-marker',
-                        html: '📍',
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    })
-                }).addTo(map);
+            try {
+                log('=== showNearestTemples START ===');
+                log('Location:', location);
                 
-                userMarker.bindPopup('Your Location');
-            } else {
-                logWarn(`⚠️ Skipping user marker due to invalid location coordinates: lat=${location.lat}, lng=${location.lng}`);
-            }
-            
-            // Show loading message while calculating distances
-            const results = document.getElementById('nearbyResults');
-            results.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Finding nearest temples...</p></div>';
+                // Validate location
+                if (!location || !isValidCoordinates(location.lat, location.lng)) {
+                    logError('Invalid location in showNearestTemples:', location);
+                    throw new Error('Invalid location coordinates');
+                }
+                
+                // Check if map exists
+                if (!map) {
+                    logError('Map not initialized in showNearestTemples');
+                    throw new Error('Map not initialized');
+                }
+                
+                // Check if results element exists
+                const results = document.getElementById('nearbyResults');
+                if (!results) {
+                    logError('nearbyResults element not found');
+                    throw new Error('Results container not found');
+                }
+                
+                // Add user marker
+                if (userMarker) {
+                    map.removeLayer(userMarker);
+                }
+                
+                // Add user marker
+                if (location.lat !== null && location.lng !== null && !isNaN(location.lat) && !isNaN(location.lng)) {
+                    userMarker = L.marker([location.lat, location.lng], {
+                        icon: L.divIcon({
+                            className: 'user-marker',
+                            html: '📍',
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 15]
+                        })
+                    }).addTo(map);
+                    
+                    userMarker.bindPopup('Your Location');
+                    log('User marker added to map');
+                } else {
+                    logWarn(`Skipping user marker due to invalid location coordinates: lat=${location.lat}, lng=${location.lng}`);
+                }
+                
+                // Show loading message while calculating distances
+                results.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Finding nearest temples...</p></div>';
+                log('Loading message displayed');
             
             // Ensure temple data is loaded
             if (!window.divyaDesams || !Array.isArray(window.divyaDesams) || window.divyaDesams.length === 0) {
@@ -1933,13 +1978,21 @@ Version History:
                 map.setView([location.lat, location.lng], 10);
                 
                 log(`Successfully displayed ${templeCards.length} temples`);
+                log('=== showNearestTemples SUCCESS ===');
             } catch (err) {
+                logError('=== showNearestTemples ERROR ===');
                 logError('Error displaying temple results:', err);
-                results.innerHTML = `<div class="error-message" style="padding: 20px; text-align: center; color: #dc3545;">
-                    <h3>Error displaying results</h3>
-                    <p>${sanitizeHTML(err.message || 'An error occurred while displaying temples.')}</p>
-                    <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">Please try again.</p>
-                </div>`;
+                logError('Error message:', err.message);
+                logError('Error stack:', err.stack);
+                
+                const results = document.getElementById('nearbyResults');
+                if (results) {
+                    results.innerHTML = `<div class="error-message" style="padding: 20px; text-align: center; color: #dc3545;">
+                        <h3>Error displaying results</h3>
+                        <p>${sanitizeHTML(err.message || 'An error occurred while displaying temples.')}</p>
+                        <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">Please check the browser console for details.</p>
+                    </div>`;
+                }
                 throw err; // Re-throw to be caught by caller
             }
         }
