@@ -30,8 +30,32 @@ Version History:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Divya Desam Locator - Find Nearest Sacred Temples</title>
-    
+
+    <!-- SEO Meta Tags -->
+    <title>BhaktiMap - Plan Your Temple Itinerary | 401 Sacred Hindu Temples with Route Planner</title>
+    <meta name="description" content="Plan your temple pilgrimage across India. Find temples near you, create custom itineraries, get real-time timings for 401+ sacred sites including Divya Desam & Paadal Petra Sthalams. Perfect for NRIs planning temple visits.">
+    <meta name="keywords" content="temple finder, temple near me, divya desam temples, paadal petra sthalams, hindu temple route planner, temple itinerary planner, india temple tour, temple timings, pilgrimage planning, NRI temple visit, vishnu temples, shiva temples">
+    <meta name="author" content="BhaktiMap">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://divyadesam.communityforge.info/">
+    <meta property="og:title" content="BhaktiMap - Plan Your Temple Pilgrimage Itinerary">
+    <meta property="og:description" content="Interactive route planner for 401+ Hindu temples. Find temples near you, plan multi-temple visits, get real-time timings. Perfect for planning your India temple tour.">
+    <meta property="og:image" content="https://divyadesam.communityforge.info/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://divyadesam.communityforge.info/">
+    <meta property="twitter:title" content="BhaktiMap - Temple Route Planner & Itinerary Builder">
+    <meta property="twitter:description" content="Plan your temple pilgrimage with ease. 401+ temples, real-time timings, custom routes.">
+    <meta property="twitter:image" content="https://divyadesam.communityforge.info/og-image.png">
+
+    <!-- Geo Tags -->
+    <meta name="geo.region" content="IN">
+    <meta name="geo.placename" content="India">
+
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -530,8 +554,8 @@ Version History:
     
     <div class="container">
         <div class="header">
-            <h1>🛕 Divya Desam Locator</h1>
-            <p>Interactive map and route planner for 108 sacred Vishnu temples</p>
+            <h1>🛕 BhaktiMap</h1>
+            <p>Plan your temple pilgrimage across India - 401 sacred temples with route planner & real-time timings</p>
         </div>
 
         <div class="main-content">
@@ -670,15 +694,36 @@ Version History:
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
 
-    <!-- Supabase client for real-time temple data -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <!-- Static temple data fallback -->
     <script src="temple-data.js"></script>
     
     <script>
+        // ====================================================================
+        // CONFIGURATION & CONSTANTS
+        // ====================================================================
+        const CONFIG = {
+            BATCH_SIZE: 2,
+            MAX_AIR_DISTANCE: 50,
+            MAX_CANDIDATE_TEMPLES: 20,
+            API_TIMEOUT: 15000,
+            MAX_API_CALLS_PER_MINUTE: 40,
+            RATE_LIMIT_WINDOW: 60000,
+            MAX_NEAREST_TEMPLES: 10,
+            DEFAULT_DETOUR_RANGE: 25,
+            DEBOUNCE_DELAY: 300
+        };
+
+        // Debug flag - set to false in production
+        const DEBUG = false;
+        const log = DEBUG ? log.bind(console) : () => {};
+        const logError = DEBUG ? logError.bind(console) : () => {};
+        const logWarn = DEBUG ? logWarn.bind(console) : () => {};
+
         // API availability flag - Free APIs are always available
         const CAN_USE_API = true;
+        
+        // Temple timings database (loaded from JSON file)
+        let templeTimingsDB = null;
         
         // Cities database with coordinates
         const cities = [
@@ -767,140 +812,171 @@ Version History:
             { name: "Rajkot", state: "Gujarat", lat: 22.3039, lng: 70.8022 }
         ];
 
-        // Supabase configuration for temple data
-        const SUPABASE_URL = 'https://yxsnfxiebolatzhkhbyi.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4c25meGllYm9sYXR6aGtoYnlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1Nzk0NjYsImV4cCI6MjA3MjE1NTQ2Nn0.sx_tPbAiqg7yU16_sPghsoWQ6tBKz5k5vuiuJxe8_hg';
+        // ====================================================================
+        // UTILITY FUNCTIONS
+        // ====================================================================
         
-        // Initialize Supabase client
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        // Temple data will be loaded from Supabase API (all 401 temples)
+        /**
+         * Sanitizes HTML to prevent XSS attacks
+         * @param {string} str - String to sanitize
+         * @returns {string} - Sanitized string
+         */
+        function sanitizeHTML(str) {
+            if (typeof str !== 'string') return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        /**
+         * Escapes special characters in a string for use in HTML attributes
+         * @param {string} str - String to escape
+         * @returns {string} - Escaped string
+         */
+        function escapeHtmlAttribute(str) {
+            if (typeof str !== 'string') return '';
+            return str.replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&#039;');
+        }
+
+        /**
+         * Validates coordinates
+         * @param {number} lat - Latitude
+         * @param {number} lng - Longitude
+         * @returns {boolean} - True if valid
+         */
+        function isValidCoordinates(lat, lng) {
+            return typeof lat === 'number' && typeof lng === 'number' &&
+                   !isNaN(lat) && !isNaN(lng) &&
+                   lat >= -90 && lat <= 90 &&
+                   lng >= -180 && lng <= 180;
+        }
+
+        /**
+         * Validates temple name
+         * @param {string} name - Temple name
+         * @returns {boolean} - True if valid
+         */
+        function isValidTempleName(name) {
+            return typeof name === 'string' && name.trim().length > 0 && name.length < 500;
+        }
+
+        /**
+         * Formats distance with unit
+         * @param {number} distance - Distance in km
+         * @param {boolean} isEstimated - Whether distance is estimated
+         * @returns {string} - Formatted distance string
+         */
+        function formatDistance(distance, isEstimated) {
+            if (typeof distance !== 'number' || isNaN(distance)) return 'Unknown';
+            const formatted = distance.toFixed(1);
+            const estimate = isEstimated ? ' (Estimated)' : ' (Actual route)';
+            return `${formatted} km${estimate}`;
+        }
+
+        /**
+         * Error handling utility
+         * @param {Error} error - Error object
+         * @param {string} userMessage - User-friendly error message
+         * @returns {string} - User-friendly error message
+         */
+        function handleError(error, userMessage) {
+            logError('Error:', error);
+            return userMessage || 'An error occurred. Please try again.';
+        }
+
+        /**
+         * Creates a temple card HTML safely
+         * @param {Object} temple - Temple object
+         * @param {Object} timings - Timing data
+         * @param {Object} options - Additional options (distance, isEstimated, etc.)
+         * @returns {string} - Safe HTML string
+         */
+        function createTempleCard(temple, timings, options = {}) {
+            const name = sanitizeHTML(temple.displayName || temple.name || 'Unknown Temple');
+            const perumal = sanitizeHTML(temple.perumal || 'Not specified');
+            const thaayaar = sanitizeHTML(temple.thaayaar || 'Not specified');
+            const region = sanitizeHTML(temple.region || 'Not specified');
+            const link = escapeHtmlAttribute(temple.link || '#');
+            const templeName = escapeHtmlAttribute(temple.name || '');
+            
+            let timingHTML = '';
+            if (timings && timings.hours && Array.isArray(timings.hours)) {
+                timingHTML = timings.hours.map(hour => 
+                    `<div style="font-size: 0.85rem; margin: 3px 0; line-height: 1.3; color: #333; font-weight: 500;">${sanitizeHTML(hour)}</div>`
+                ).join('');
+            }
+            
+            const note = timings && timings.note ? `<div style="font-size: 0.8rem; color: #667eea; margin-top: 6px; font-weight: 500; font-style: italic; background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px;">${sanitizeHTML(timings.note)}</div>` : '';
+            const phone = timings && timings.phone ? `<div style="font-size: 0.75rem; color: #0066cc; margin-top: 4px;">📞 ${sanitizeHTML(timings.phone)}</div>` : '';
+            
+            let distanceHTML = '';
+            if (options.distance !== undefined) {
+                const distanceText = formatDistance(options.distance, options.isEstimated || false);
+                distanceHTML = `<div class="temple-distance">
+                    Road Distance: <strong>${sanitizeHTML(distanceText)}</strong>
+                </div>`;
+            } else if (options.detour !== undefined) {
+                const detourText = options.detour.toFixed(1) + ' km';
+                distanceHTML = `<div class="temple-distance">
+                    Road Detour: <strong>${sanitizeHTML(detourText)}</strong>
+                    <small style="color: #999; display: block;">
+                        ${CAN_USE_API ? '(Actual route calculation)' : '(Estimated)'}
+                    </small>
+                </div>`;
+            }
+            
+            return `
+                <div class="temple-card" data-temple-name="${templeName}">
+                    <div class="temple-name">${name}</div>
+                    <div style="font-size: 0.9rem; color: #666; margin: 5px 0;">
+                        <strong>Perumal:</strong> ${perumal} | 
+                        <strong>Thaayaar:</strong> ${thaayaar}
+                    </div>
+                    <div style="font-size: 0.85rem; color: #764ba2; margin-bottom: 8px;">
+                        <strong>Region:</strong> ${region}
+                    </div>
+                    <div style="margin: 8px 0; padding: 10px; background: rgba(102, 126, 234, 0.05); border-radius: 6px; border-left: 3px solid #667eea;">
+                        <div style="font-weight: 500; color: #667eea; font-size: 0.85rem; margin-bottom: 6px;">
+                            🕒 Temple Timings
+                        </div>
+                        ${timingHTML}
+                        ${note}
+                        ${phone}
+                    </div>
+                    ${distanceHTML}
+                    <a href="${link}" target="_blank" class="btn-navigate" rel="noopener noreferrer">Get Directions</a>
+                </div>
+            `;
+        }
+
+        // Temple data will be loaded from static file (all 401 temples)
         window.divyaDesams = [];
         
-        async function loadAllTemplesFromSupabase() {
-            console.log('📡 Loading all temples from Supabase...');
+        /**
+         * Load temple timings from JSON file
+         * @returns {Promise<boolean>} - True if loaded successfully
+         */
+        async function loadTempleTimings() {
+            if (templeTimingsDB !== null) {
+                return true; // Already loaded
+            }
             
             try {
-                const { data: temples, error } = await supabase
-                    .from('temples')
-                    .select('name, slug, locality, district, state, lat, lng, significance_tags, logistics, wikidata_qid')
-                    .order('name');
-                    
-                if (error) {
-                    console.error('❌ Supabase error:', error);
-                    return false;
+                log('Loading temple timings from JSON...');
+                const response = await fetch('temple-timings.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
-                // Transform to expected format and filter out temples with invalid coordinates
-                window.divyaDesams = temples
-                    .filter(temple => typeof temple.lat === 'number' && typeof temple.lng === 'number' && !isNaN(temple.lat) && !isNaN(temple.lng))
-                    .map(temple => {
-                        // Extract deity and thaayaar from significance_tags or infer
-                        let perumal = 'Not specified';
-                        let thaayaar = 'Not specified';
-
-                        if (temple.significance_tags && Array.isArray(temple.significance_tags)) {
-                            const tags = temple.significance_tags.map(tag => tag.toLowerCase());
-                            
-                            // Look for common Perumal names
-                            if (tags.includes('vishnu') || tags.includes('perumal')) {
-                                perumal = 'Lord Vishnu';
-                            } else if (tags.includes('rama')) {
-                                perumal = 'Lord Rama';
-                            } else if (tags.includes('krishna')) {
-                                perumal = 'Lord Krishna';
-                            } else if (tags.includes('narasimha')) {
-                                perumal = 'Lord Narasimha';
-                            } else if (tags.includes('varaha')) {
-                                perumal = 'Lord Varaha';
-                            } else if (tags.includes('balaji') || tags.includes('venkateswara')) {
-                                perumal = 'Lord Venkateswara';
-                            } else if (tags.includes('ranganatha')) {
-                                perumal = 'Lord Ranganatha';
-                            } else if (tags.includes('parthasarathy')) {
-                                perumal = 'Lord Parthasarathy';
-                            } else if (tags.includes('sundareswarar')) { // For Meenakshi Sundareswarar
-                                perumal = 'Lord Sundareswarar';
-                            }
-                            
-                            // Look for common Thaayaar names
-                            if (tags.includes('lakshmi') || tags.includes('thaayaar')) {
-                                thaayaar = 'Goddess Lakshmi';
-                            } else if (tags.includes('sita')) {
-                                thaayaar = 'Goddess Sita';
-                            } else if (tags.includes('rukmini')) {
-                                thaayaar = 'Goddess Rukmini';
-                            } else if (tags.includes('padmavathi')) {
-                                thaayaar = 'Goddess Padmavathi';
-                            } else if (tags.includes('ranganayaki')) {
-                                thaayaar = 'Goddess Ranganayaki';
-                            } else if (tags.includes('meenakshi')) { // For Meenakshi Sundareswarar
-                                thaayaar = 'Goddess Meenakshi';
-                            }
-                            
-                            // If still generic, try to use the first tag as a fallback for Perumal
-                            if (perumal === 'Not specified' && temple.significance_tags.length > 0) {
-                                perumal = temple.significance_tags[0];
-                            }
-                        }
-
-                        // Attempt to infer from name if still 'Not specified'
-                        const lowerCaseName = temple.name.toLowerCase();
-                        if (perumal === 'Not specified') {
-                            if (lowerCaseName.includes('ranganatha')) perumal = 'Lord Ranganatha';
-                            else if (lowerCaseName.includes('venkateswara')) perumal = 'Lord Venkateswara';
-                            else if (lowerCaseName.includes('krishna')) perumal = 'Lord Krishna';
-                            else if (lowerCaseName.includes('rama')) perumal = 'Lord Rama';
-                            else if (lowerCaseName.includes('parthasarathy')) perumal = 'Lord Parthasarathy';
-                            else if (lowerCaseName.includes('sundareswarar')) perumal = 'Lord Sundareswarar';
-                        }
-                        if (thaayaar === 'Not specified') {
-                            if (lowerCaseName.includes('ranganayaki')) thaayaar = 'Goddess Ranganayaki';
-                            else if (lowerCaseName.includes('padmavathi')) thaayaar = 'Goddess Padmavathi';
-                            else if (lowerCaseName.includes('meenakshi')) thaayaar = 'Goddess Meenakshi';
-                        }
-                        
-                        // Generate Google Maps link
-                        const searchQuery = `${temple.name} ${temple.locality} ${temple.state}`.trim();
-                        const link = `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}`;
-                        
-                        // Determine region/tradition from slug (definitive source)
-                        let region = 'Sacred Temple';
-                        const slug = (temple.slug || '').toLowerCase();
-                        
-                        if (slug.includes('divya-desam')) {
-                            region = 'Divya Desam';
-                        } else if (slug.includes('paadal-petra')) {
-                            region = 'Paadal Petra Sthalam';
-                        } else if (slug.includes('abhimana')) {
-                            region = 'Abhimana Sthalam';
-                        } else if (temple.significance_tags && Array.isArray(temple.significance_tags) && temple.significance_tags.some(tag => tag.toLowerCase().includes('abhimana'))) {
-                            region = 'Abhimana Sthalam';
-                            
-                        }
-                        
-                        return {
-                            name: temple.name,
-                            displayName: temple.name,
-                            lat: temple.lat,
-                            lng: temple.lng,
-                            link: link,
-                            perumal: perumal,
-                            thaayaar: thaayaar,
-                            locality: temple.locality,
-                            district: temple.district,
-                            state: temple.state,
-                            region: region,
-                            wikidata_qid: temple.wikidata_qid
-                        };
-                    });
-                
-                console.log(`✅ Loaded ${window.divyaDesams.length} valid temples from Supabase`);
-                console.log(`📊 Breakdown: Tamil Nadu: ${window.divyaDesams.filter(t => t.state === 'Tamil Nadu').length}, Others: ${window.divyaDesams.filter(t => t.state !== 'Tamil Nadu').length}`);
-                
+                templeTimingsDB = await response.json();
+                log('Temple timings loaded successfully');
                 return true;
             } catch (error) {
-                console.error('❌ Failed to load temples:', error);
+                logWarn('Failed to load temple timings:', error);
+                templeTimingsDB = {}; // Use empty object as fallback
                 return false;
             }
         }
@@ -1387,21 +1463,28 @@ Version History:
             await addTempleMarkers();
         }
 
-        // Add temple markers to map
+        /**
+         * Add temple markers to map with lazy loading for performance
+         * @returns {Promise<void>}
+         */
         async function addTempleMarkers() {
             // Ensure temple data is loaded
             if (!window.divyaDesams || !Array.isArray(window.divyaDesams) || window.divyaDesams.length === 0) {
-                console.log('⏳ Temple data not ready for map markers, waiting...');
+                log('Temple data not ready for map markers, waiting...');
                 await waitForTempleData();
             }
             
             let validTemples = 0;
             let skippedTemples = 0;
 
+            // Clear existing markers
+            templeMarkers.forEach(marker => map.removeLayer(marker));
+            templeMarkers = [];
+
             window.divyaDesams.forEach(temple => {
-                // Skip temples with null coordinates
-                if (!temple.lat || !temple.lng || temple.lat === null || temple.lng === null) {
-                    console.warn(`⚠️ Skipping temple "${temple.displayName}" - null coordinates`);
+                // Skip temples with null or invalid coordinates
+                if (!temple.lat || !temple.lng || !isValidCoordinates(temple.lat, temple.lng)) {
+                    logWarn(`Skipping temple "${temple.displayName}" - invalid coordinates`);
                     skippedTemples++;
                     return;
                 }
@@ -1416,22 +1499,25 @@ Version History:
                         })
                     }).addTo(map);
 
+                    // Use sanitized HTML for popup
+                    const displayName = sanitizeHTML(temple.displayName || 'Unknown Temple');
+                    const link = escapeHtmlAttribute(temple.link || '#');
                     marker.bindPopup(`
-                        <strong>${temple.displayName}</strong><br>
-                        <a href="${temple.link}" target="_blank" class="btn-navigate">Get Directions</a>
+                        <strong>${displayName}</strong><br>
+                        <a href="${link}" target="_blank" rel="noopener noreferrer" class="btn-navigate">Get Directions</a>
                     `);
 
                     templeMarkers.push(marker);
                     validTemples++;
                 } catch (error) {
-                    console.error(`❌ Failed to create marker for "${temple.displayName}":`, error);
+                    logError(`Failed to create marker for "${temple.displayName}":`, error);
                     skippedTemples++;
                 }
             });
 
-            console.log(`✅ Added ${validTemples} temple markers to map`);
+            log(`Added ${validTemples} temple markers to map`);
             if (skippedTemples > 0) {
-                console.warn(`⚠️ Skipped ${skippedTemples} temples with invalid coordinates`);
+                logWarn(`Skipped ${skippedTemples} temples with invalid coordinates`);
             }
         }
 
@@ -1452,8 +1538,8 @@ Version History:
             }
             
             if (issues.length > 0) {
-                console.error('❌ Dependencies missing:', issues);
-                console.log('🔍 Debug info:', {
+                logError('❌ Dependencies missing:', issues);
+                log('🔍 Debug info:', {
                     'window.divyaDesams': window.divyaDesams,
                     'typeof window.divyaDesams': typeof window.divyaDesams,
                     'Array.isArray(window.divyaDesams)': Array.isArray(window.divyaDesams),
@@ -1462,7 +1548,7 @@ Version History:
                 return false;
             }
             
-            console.log('✅ All dependencies loaded:', {
+            log('✅ All dependencies loaded:', {
                 temples: window.divyaDesams.length,
                 leaflet: !!window.L
             });
@@ -1472,11 +1558,11 @@ Version History:
         // Load static temple data as fallback
         async function loadStaticTempleData() {
             try {
-                console.log('📁 Loading static temple data...');
+                log('📁 Loading static temple data...');
 
                 // Check if temple-data.js is already loaded
                 if (window.divyaDesams && Array.isArray(window.divyaDesams) && window.divyaDesams.length > 0) {
-                    console.log('✅ Static temple data already available');
+                    log('✅ Static temple data already available');
                     return true;
                 }
 
@@ -1486,11 +1572,11 @@ Version History:
                         const script = document.createElement('script');
                         script.src = 'temple-data.js';
                         script.onload = () => {
-                            console.log('✅ Static temple data script loaded');
+                            log('✅ Static temple data script loaded');
                             resolve();
                         };
                         script.onerror = () => {
-                            console.error('❌ Failed to load static temple data script');
+                            logError('❌ Failed to load static temple data script');
                             reject(new Error('Could not load temple-data.js'));
                         };
                         document.head.appendChild(script);
@@ -1509,1153 +1595,97 @@ Version History:
 
                 return false;
             } catch (error) {
-                console.error('❌ Error loading static temple data:', error);
+                logError('❌ Error loading static temple data:', error);
                 return false;
             }
         }
 
-        // Wait for temple data to load
+        /**
+         * Wait for temple data to load from static file
+         * @returns {Promise<void>}
+         */
         async function waitForTempleData() {
-            // Try to load from Supabase first
-            const supabaseLoaded = await loadAllTemplesFromSupabase();
+            // Load static temple data
+            const staticLoaded = await loadStaticTempleData();
 
-            if (supabaseLoaded && window.divyaDesams && window.divyaDesams.length > 0) {
-                console.log(`✅ Temple data loaded from Supabase:`, window.divyaDesams.length, 'temples');
+            if (staticLoaded && window.divyaDesams && window.divyaDesams.length > 0) {
+                log(`Temple data loaded from static file: ${window.divyaDesams.length} temples`);
                 return Promise.resolve();
             } else {
-                console.warn('⚠️ Supabase failed, trying fallback to static data...');
-
-                // Fallback to static temple data
-                const staticLoaded = await loadStaticTempleData();
-
-                if (staticLoaded && window.divyaDesams && window.divyaDesams.length > 0) {
-                    console.log(`✅ Temple data loaded from static file:`, window.divyaDesams.length, 'temples');
-                    return Promise.resolve();
-                } else {
-                    console.error('❌ Failed to load temple data from both Supabase and static file');
-                    return Promise.reject(new Error('Temple data failed to load from all sources. Please check your connection.'));
-                }
+                logWarn('Failed to load temple data from static file');
+                return Promise.reject(new Error('Temple data failed to load. Please check your connection.'));
             }
         }
 
-        // Comprehensive temple timings database - All 108 Divya Desam temples with real timing data from Gemini + Google Places API
-        const templeTimingsDB = {
-          "ThiruArangam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": "+914312432246",
-                    "website": "http://www.srirangam.org",
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKoazhi": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKarambanoor": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruVellarai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruAnbil": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruPer Nagar": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKandiyur": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKoodalur": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKavithalam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruPullam boothangudi": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruAthanoor": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKudanthai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruVinnagar": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruNaraiyur": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruCherai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKannamangai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKannapuram": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKannangudi": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruNaagai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruThanjai Maamani Kovil": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruNandipura Vinnagaram": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruVelliyangudi": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruAzhundhur": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruChirupuliyoor": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruThalaichanganaanmadhiyam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruIndhalur": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKavalambadi": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKaazhisrirama Vinnagaram": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruArimeya Vinnagaram": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruVanpurushothamam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruSemponsei Kovil": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruManimaada Kovil": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruVaikuntha Vinnagaram": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruAali": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruThevanaarthogai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruThetriyambalam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruManikkoodam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruVellakkulam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruParthan Palli": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruChithrakootam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruAheendrapuram": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKovalur": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKachchi": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:30 PM",
-                              "Evening: 4:00 PM - 8:30 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kanchipuram_pattern"
-          },
-          "ThiruAttabuyakaram": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:30 PM",
-                              "Evening: 4:00 PM - 8:30 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kanchipuram_pattern"
-          },
-          "ThiruThankaa": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:30 PM",
-                              "Evening: 4:00 PM - 8:30 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kanchipuram_pattern"
-          },
-          "ThiruVelukkai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:30 PM",
-                              "Evening: 4:00 PM - 8:30 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kanchipuram_pattern"
-          },
-          "ThiruNeeragam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:30 PM",
-                              "Evening: 4:00 PM - 8:30 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kanchipuram_pattern"
-          },
-          "ThiruPaadagam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:30 PM",
-                              "Evening: 4:00 PM - 8:30 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kanchipuram_pattern"
-          },
-          "ThiruNilathingal Thundam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:30 PM",
-                              "Evening: 4:00 PM - 8:30 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kanchipuram_pattern"
-          },
-          "ThiruOoragam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:30 PM",
-                              "Evening: 4:00 PM - 8:30 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kanchipuram_pattern"
-          },
-          "ThiruVeggaa": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:30 PM",
-                              "Evening: 4:00 PM - 8:30 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kanchipuram_pattern"
-          },
-          "ThiruKaragam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:30 PM",
-                              "Evening: 4:00 PM - 8:30 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kanchipuram_pattern"
-          },
-          "ThiruKarvanam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:30 PM",
-                              "Evening: 4:00 PM - 8:30 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kanchipuram_pattern"
-          },
-          "ThiruKalvanur": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:30 PM",
-                              "Evening: 4:00 PM - 8:30 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kanchipuram_pattern"
-          },
-          "ThiruPavalavannam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:30 PM",
-                              "Evening: 4:00 PM - 8:30 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kanchipuram_pattern"
-          },
-          "ThiruParameswara Vinnagaram": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:30 PM",
-                              "Evening: 4:00 PM - 8:30 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kanchipuram_pattern"
-          },
-          "ThiruPutkuzhi": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruNindravur": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruEvvul": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruAllikkeni": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": "+914428442449",
-                    "website": "http://en.wikipedia.org/wiki/Parthasarathy_Temple",
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruNeermalai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruIdaventhai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKadanmallai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKadigai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruAyodhi": {
-                    "hours": [
-                              "Morning: 5:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 9:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "north_india_pattern"
-          },
-          "ThiruNaimisaranyam": {
-                    "hours": [
-                              "Morning: 5:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 9:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "north_india_pattern"
-          },
-          "ThiruPiruthi": {
-                    "hours": [
-                              "Morning: 5:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 9:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "north_india_pattern"
-          },
-          "ThiruKandamennum Kadinagar": {
-                    "hours": [
-                              "Morning: 5:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 9:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "north_india_pattern"
-          },
-          "ThiruVadari": {
-                    "hours": [
-                              "Morning: 5:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 9:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "north_india_pattern"
-          },
-          "ThiruSalagraamam": {
-                    "hours": [
-                              "Morning: 5:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 9:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "north_india_pattern"
-          },
-          "ThiruVada Madurai": {
-                    "hours": [
-                              "Morning: 5:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 9:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "north_india_pattern"
-          },
-          "ThiruAyppaadi": {
-                    "hours": [
-                              "Morning: 5:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 9:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "north_india_pattern"
-          },
-          "ThiruThuvarai": {
-                    "hours": [
-                              "Morning: 5:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 9:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "north_india_pattern"
-          },
-          "ThiruSingavelkundram": {
-                    "hours": [
-                              "Morning: 5:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 9:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "north_india_pattern"
-          },
-          "ThiruVenkatam": {
-                    "hours": [
-                              "Morning: 2:30 AM - 11:45 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "special_timing",
-                    "source": "known_special_hours"
-          },
-          "ThiruPaarkadal": {
-                    "hours": [
-                              "Morning: 5:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 9:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "north_india_pattern"
-          },
-          "ThiruNaavaai": {
-                    "hours": [
-                              "Morning: 4:00 AM - 11:00 AM",
-                              "Evening: 5:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kerala_temple_pattern"
-          },
-          "ThiruViththuvakkodu": {
-                    "hours": [
-                              "Morning: 4:00 AM - 11:00 AM",
-                              "Evening: 5:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kerala_temple_pattern"
-          },
-          "ThiruKaatkarai": {
-                    "hours": [
-                              "Morning: 4:00 AM - 11:00 AM",
-                              "Evening: 5:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kerala_temple_pattern"
-          },
-          "ThiruMoozhikkalam": {
-                    "hours": [
-                              "Morning: 4:00 AM - 11:00 AM",
-                              "Evening: 5:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kerala_temple_pattern"
-          },
-          "ThiruVallavaazh": {
-                    "hours": [
-                              "Morning: 4:00 AM - 11:00 AM",
-                              "Evening: 5:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kerala_temple_pattern"
-          },
-          "ThiruKadithaanam": {
-                    "hours": [
-                              "Morning: 4:00 AM - 11:00 AM",
-                              "Evening: 5:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kerala_temple_pattern"
-          },
-          "ThiruChenkundrur": {
-                    "hours": [
-                              "Morning: 4:00 AM - 11:00 AM",
-                              "Evening: 5:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kerala_temple_pattern"
-          },
-          "ThiruPuliyur": {
-                    "hours": [
-                              "Morning: 4:00 AM - 11:00 AM",
-                              "Evening: 5:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kerala_temple_pattern"
-          },
-          "ThiruVaaranvilai": {
-                    "hours": [
-                              "Morning: 4:00 AM - 11:00 AM",
-                              "Evening: 5:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kerala_temple_pattern"
-          },
-          "ThiruVanvandur": {
-                    "hours": [
-                              "Morning: 4:00 AM - 11:00 AM",
-                              "Evening: 5:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kerala_temple_pattern"
-          },
-          "ThiruAnanthapuram": {
-                    "hours": [
-                              "Morning: 4:00 AM - 11:00 AM",
-                              "Evening: 5:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kerala_temple_pattern"
-          },
-          "ThiruVaattaaru": {
-                    "hours": [
-                              "Morning: 4:00 AM - 11:00 AM",
-                              "Evening: 5:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kerala_temple_pattern"
-          },
-          "ThiruVannparisaaram": {
-                    "hours": [
-                              "Morning: 4:00 AM - 11:00 AM",
-                              "Evening: 5:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "regional_pattern",
-                    "source": "kerala_temple_pattern"
-          },
-          "ThiruKurungudi": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruChireevaramangai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruVaikuntam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruVaragunamangai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruPulingudi": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruThulaivillimangalam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKulandhai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKolur": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruPerai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKurugur": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruVilliputhur": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruThankaal": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKudal": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruMaaliruncholai": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruMogur": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruKottiyur": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruPullaani": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruMeyyam": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          },
-          "ThiruParamapatham": {
-                    "hours": [
-                              "Morning: 6:00 AM - 12:00 PM",
-                              "Evening: 4:00 PM - 8:00 PM"
-                    ],
-                    "phone": null,
-                    "website": null,
-                    "status": "standard_pattern",
-                    "source": "tamil_nadu_standard"
-          }
-};
-
-        // Simple function to get temple timings from pre-populated database using unique temple ID
-        function getTempleTimings(temple) {
+        /**
+         * Get temple timings from loaded JSON database
+         * @param {Object} temple - Temple object with name property
+         * @returns {Object} - Timing data object
+         */
+        async function getTempleTimings(temple) {
+            // Ensure temple timings are loaded
+            if (templeTimingsDB === null) {
+                await loadTempleTimings();
+            }
+            
+            // Validate input
+            if (!temple || !temple.name || !isValidTempleName(temple.name)) {
+                logWarn('Invalid temple object provided to getTempleTimings');
+                return getDefaultTimings();
+            }
+            
             // Use the temple's unique 'name' field as ID for reliable lookup
-            const timingData = templeTimingsDB[temple.name];
+            const timingData = templeTimingsDB && templeTimingsDB[temple.name];
             
             if (timingData) {
-                console.log(`✅ Found timing data for temple ID: "${temple.name}" (${temple.displayName})`);
+                log(`Found timing data for temple ID: "${temple.name}"`);
                 return {
-                    hours: timingData.hours,
+                    hours: timingData.hours || [],
                     phone: timingData.phone || null,
-                    note: timingData.note || timingData.website ? `${timingData.note || ''} ${timingData.website || ''}`.trim() : null,
+                    note: timingData.note || (timingData.website ? timingData.website : null),
                     status: timingData.status || 'available',
                     source: 'curated_database'
                 };
-            } else {
-                console.log(`⚠️ No timing data found for temple ID: "${temple.name}" (${temple.displayName})`);
             }
             
-            // For temples not in database, return typical temple hours
+            // For temples not in database, return default temple hours
+            return getDefaultTimings();
+        }
+
+        /**
+         * Get default temple timings
+         * @returns {Object} - Default timing data
+         */
+        function getDefaultTimings() {
             return {
-                hours: ["Morning: 6:00 AM - 12:00 PM", "Evening: 4:00 PM - 8:00 PM"],
-                note: "Generic temple hours - please verify with temple for exact timings.",
+                hours: ['Morning: 6:00 AM - 12:00 PM', 'Evening: 4:00 PM - 8:00 PM'],
+                note: 'Generic temple hours - please verify with temple for exact timings.',
                 status: 'generic',
                 source: 'fallback_pattern'
             };
         }
 
-        // Find nearest temples from coordinates (reusable function)
+        // Legacy templeTimingsDB object removed - now loaded from temple-timings.json
+
+        /**
+         * Find nearest temples from coordinates
+         * @param {number} lat - Latitude
+         * @param {number} lng - Longitude
+         * @returns {Promise<void>}
+         */
         async function findNearestTemplesFromCoords(lat, lng) {
-            console.log('🔍 Finding temples from coordinates:', lat, lng);
-            console.log('📊 Temple data available:', window.divyaDesams ? window.divyaDesams.length : 'NOT LOADED');
+            // Validate coordinates
+            if (!isValidCoordinates(lat, lng)) {
+                logError('Invalid coordinates provided:', {lat, lng});
+                throw new Error('Invalid coordinates');
+            }
+            
+            log('Finding temples from coordinates:', lat, lng);
+            log('Temple data available:', window.divyaDesams ? window.divyaDesams.length : 'NOT LOADED');
             
             // Ensure temple data is loaded
             if (!window.divyaDesams || !Array.isArray(window.divyaDesams) || window.divyaDesams.length === 0) {
-                console.log('⏳ Temple data not ready, waiting...');
+                log('Temple data not ready, waiting...');
                 await waitForTempleData();
             }
             
@@ -2663,31 +1693,38 @@ Version History:
             await showNearestTemples(userLocation);
         }
 
-        // Find nearest temples based on user GPS location
+        /**
+         * Find nearest temples based on user GPS location
+         */
         window.findNearestTemples = function() {
-            console.log('📍 Find My Location button clicked');
+            log('Find My Location button clicked');
             
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
             const results = document.getElementById('nearbyResults');
             
             if (!loading || !error || !results) {
-                console.error('❌ Required DOM elements not found:', {loading: !!loading, error: !!error, results: !!results});
+                logError('Required DOM elements not found:', {loading: !!loading, error: !!error, results: !!results});
                 return;
             }
             
             loading.style.display = 'block';
             error.style.display = 'none';
-            results.innerHTML = '';
+            results.textContent = ''; // Use textContent instead of innerHTML
 
             if (navigator.geolocation) {
-                console.log('📍 Geolocation is supported, requesting position...');
+                log('Geolocation is supported, requesting position...');
                 navigator.geolocation.getCurrentPosition(
                     async position => {
                         try {
-                            await findNearestTemplesFromCoords(position.coords.latitude, position.coords.longitude);
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            if (!isValidCoordinates(lat, lng)) {
+                                throw new Error('Invalid GPS coordinates received');
+                            }
+                            await findNearestTemplesFromCoords(lat, lng);
                         } catch (err) {
-                            error.textContent = `Location processing failed: ${err.message}`;
+                            error.textContent = handleError(err, 'Location processing failed. Please try again.');
                             error.style.display = 'block';
                         } finally {
                             loading.style.display = 'none';
@@ -2706,8 +1743,21 @@ Version History:
             }
         };
 
-        // Calculate distance between two points
+        /**
+         * Calculate distance between two coordinates using Haversine formula
+         * @param {number} lat1 - Latitude of first point
+         * @param {number} lon1 - Longitude of first point
+         * @param {number} lat2 - Latitude of second point
+         * @param {number} lon2 - Longitude of second point
+         * @returns {number} - Distance in kilometers
+         */
         function calculateDistance(lat1, lon1, lat2, lon2) {
+            // Validate inputs
+            if (!isValidCoordinates(lat1, lon1) || !isValidCoordinates(lat2, lon2)) {
+                logError('Invalid coordinates in calculateDistance');
+                return Infinity;
+            }
+            
             const R = 6371; // Earth's radius in km
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -2718,8 +1768,17 @@ Version History:
             return R * c;
         }
 
-        // Show nearest temples
+        /**
+         * Show nearest temples to a location
+         * @param {Object} location - Location object with lat/lng
+         * @returns {Promise<void>}
+         */
         async function showNearestTemples(location) {
+            // Validate location
+            if (!location || !isValidCoordinates(location.lat, location.lng)) {
+                logError('Invalid location in showNearestTemples');
+                throw new Error('Invalid location coordinates');
+            }
             // Add user marker
             if (userMarker) {
                 map.removeLayer(userMarker);
@@ -2738,7 +1797,7 @@ Version History:
                 
                 userMarker.bindPopup('Your Location');
             } else {
-                console.warn(`⚠️ Skipping user marker due to invalid location coordinates: lat=${location.lat}, lng=${location.lng}`);
+                logWarn(`⚠️ Skipping user marker due to invalid location coordinates: lat=${location.lat}, lng=${location.lng}`);
             }
             
             // Show loading message while calculating distances
@@ -2747,14 +1806,14 @@ Version History:
             
             // Ensure temple data is loaded
             if (!window.divyaDesams || !Array.isArray(window.divyaDesams) || window.divyaDesams.length === 0) {
-                console.log('⏳ Temple data not ready, waiting...');
+                log('⏳ Temple data not ready, waiting...');
                 await waitForTempleData();
             }
 
-            console.log(`🚀 Finding nearest temples from ${window.divyaDesams.length} total temples`);
+            log(`🚀 Finding nearest temples from ${window.divyaDesams.length} total temples`);
             
             // Step 1: Calculate air distance to all temples and find top 10 nearest
-            console.log(`📐 Calculating air distances to all temples...`);
+            log(`📐 Calculating air distances to all temples...`);
             const templesWithAirDistance = window.divyaDesams
                 .filter(temple => temple.lat && temple.lng && temple.lat !== null && temple.lng !== null)
                 .map(temple => ({
@@ -2762,35 +1821,35 @@ Version History:
                     airDistance: calculateDistance(location.lat, location.lng, temple.lat, temple.lng)
                 }));
             
-            // Sort by air distance and take top 10
+            // Sort by air distance and take top N temples (configurable)
             templesWithAirDistance.sort((a, b) => a.airDistance - b.airDistance);
-            const nearestTemples = templesWithAirDistance.slice(0, 10);
+            const nearestTemples = templesWithAirDistance.slice(0, CONFIG.MAX_NEAREST_TEMPLES);
             
-            console.log(`✅ Found 10 nearest temples by air distance:`);
+            log(`Found ${CONFIG.MAX_NEAREST_TEMPLES} nearest temples by air distance:`);
             nearestTemples.forEach((temple, i) => {
-                console.log(`${i+1}. ${temple.displayName}: ${temple.airDistance.toFixed(1)} km (air)`);
+                log(`${i+1}. ${temple.displayName}: ${temple.airDistance.toFixed(1)} km (air)`);
             });
             
-            // Step 2: Calculate road distances only for the top 10 nearest temples
-            results.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Calculating road distances for 10 nearest temples... 0%</p></div>';
-            console.log(`🛣️ Now calculating road distances for top 10 nearest temples...`);
+            // Step 2: Calculate road distances only for the top N nearest temples
+            results.innerHTML = `<div class="loading"><div class="loading-spinner"></div><p>Calculating road distances for ${CONFIG.MAX_NEAREST_TEMPLES} nearest temples... 0%</p></div>`;
+            log(`Now calculating road distances for top ${CONFIG.MAX_NEAREST_TEMPLES} nearest temples...`);
             
             const templesWithRoadDistance = [];
-            const totalTemples = nearestTemples.length; // Only 10 temples now
+            const totalTemples = nearestTemples.length;
             
             for (let i = 0; i < totalTemples; i++) {
                 const temple = nearestTemples[i];
                 try {
-                    console.log(`🔄 Calculating road distance to ${temple.displayName} (${i+1}/10)...`);
+                    log(`Calculating road distance to ${temple.displayName} (${i+1}/${totalTemples})...`);
                     const roadDistance = await calculateRoadDistance(location.lat, location.lng, temple.lat, temple.lng);
                     templesWithRoadDistance.push({
                         ...temple,
                         distance: roadDistance,
                         isEstimated: false
                     });
-                    console.log(`✅ ${temple.displayName}: ${roadDistance.toFixed(1)} km (road) vs ${temple.airDistance.toFixed(1)} km (air)`);
+                    log(`${temple.displayName}: ${roadDistance.toFixed(1)} km (road) vs ${temple.airDistance.toFixed(1)} km (air)`);
                 } catch (error) {
-                    console.warn(`⚠️ Failed to calculate road distance for ${temple.displayName}:`, error);
+                    logWarn(`Failed to calculate road distance for ${temple.displayName}:`, error);
                     // Use air distance as fallback with 1.3x multiplier for road estimate
                     const estimatedRoadDistance = temple.airDistance * 1.3;
                     templesWithRoadDistance.push({
@@ -2798,14 +1857,14 @@ Version History:
                         distance: estimatedRoadDistance,
                         isEstimated: true
                     });
-                    console.log(`📐 ${temple.displayName}: ${estimatedRoadDistance.toFixed(1)} km (estimated from air distance)`);
+                    log(`${temple.displayName}: ${estimatedRoadDistance.toFixed(1)} km (estimated from air distance)`);
                 }
                 
                 // Update progress after each temple
                 const progress = Math.round(((i + 1) / totalTemples) * 100);
                 results.innerHTML = `<div class="loading">
                     <div class="loading-spinner"></div>
-                    <p>Calculating road distances for 10 nearest temples... ${progress}%</p>
+                    <p>Calculating road distances for ${CONFIG.MAX_NEAREST_TEMPLES} nearest temples... ${progress}%</p>
                     <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">
                         Processing ${i + 1}/${totalTemples} nearest temples
                     </div>
@@ -2820,10 +1879,10 @@ Version History:
                 }
             }
             
-            console.log(`🎉 Road distance calculation completed for top 10 temples!`);
+            log(`Road distance calculation completed for top ${CONFIG.MAX_NEAREST_TEMPLES} temples!`);
             const successCount = templesWithRoadDistance.filter(t => !t.isEstimated).length;
             const estimatedCount = templesWithRoadDistance.filter(t => t.isEstimated).length;
-            console.log(`📊 Results: ${successCount} actual road distances, ${estimatedCount} estimated from air distance`);
+            log(`Results: ${successCount} actual road distances, ${estimatedCount} estimated from air distance`);
             
             // Sort by road distance (final sort)
             const templesWithDistance = templesWithRoadDistance;
@@ -2832,49 +1891,21 @@ Version History:
             // Sort by distance and show results
             templesWithDistance.sort((a, b) => a.distance - b.distance);
             
-            // Display results with temple timings
-            results.innerHTML = templesWithDistance.map(temple => {
-                const timings = getTempleTimings(temple);
-                const statusColor = {
-                    'verified': '#28a745',
-                    'typical': '#6c757d'
-                }[timings.status] || '#667eea';
-
-                const statusIcon = {
-                    'verified': '✅',
-                    'typical': '📅'
-                }[timings.status] || '🕒';
-
-                return `
-                <div class="temple-card">
-                    <div class="temple-name">${temple.displayName}</div>
-                    <div style="font-size: 0.9rem; color: #666; margin: 5px 0;">
-                        <strong>Perumal:</strong> ${temple.perumal || 'Not specified'} | 
-                        <strong>Thaayaar:</strong> ${temple.thaayaar || 'Not specified'}
-                    </div>
-                    <div style="font-size: 0.85rem; color: #764ba2; margin-bottom: 8px;">
-                        <strong>Region:</strong> ${temple.region || 'Not specified'}
-                    </div>
-                    <div style="margin: 8px 0; padding: 10px; background: rgba(102, 126, 234, 0.05); border-radius: 6px; border-left: 3px solid ${statusColor};">
-                        <div style="font-weight: 500; color: #667eea; font-size: 0.85rem; margin-bottom: 6px;">
-                            🕒 Temple Timings ${statusIcon}
-                            ${timings.currently_open !== undefined ? 
-                                (timings.currently_open ? '<span style="color: #28a745; margin-left: 5px;">OPEN NOW</span>' : '<span style="color: #dc3545; margin-left: 5px;">CLOSED</span>') 
-                                : ''}
-                        </div>
-                        ${timings.hours && Array.isArray(timings.hours) ? timings.hours.map(hour => `<div style="font-size: 0.85rem; margin: 3px 0; line-height: 1.3; color: #333; font-weight: 500;">${hour}</div>`).join('') : ''}
-                        ${timings.note ? `<div style="font-size: 0.8rem; color: ${statusColor}; margin-top: 6px; font-weight: 500; font-style: italic; background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px;">${timings.note}</div>` : ''}
-                        ${timings.phone ? `<div style="font-size: 0.75rem; color: #0066cc; margin-top: 4px;">📞 ${timings.phone}</div>` : ''}
-                        ${timings.rating ? `<div style="font-size: 0.75rem; color: #f39c12; margin-top: 2px;">⭐ ${timings.rating}/5</div>` : ''}
-                    </div>
-                    <div class="temple-distance">
-                        Road Distance: <strong>${temple.distance.toFixed(1)} km</strong>
-                        <small style="color: #999; display: block;">${temple.isEstimated ? '(Estimated)' : '(Actual route)'}</small>
-                    </div>
-                    <a href="${temple.link}" target="_blank" class="btn-navigate">Get Directions</a>
-                </div>
-                `;
-            }).join('');
+            // Ensure temple timings are loaded
+            if (templeTimingsDB === null) {
+                await loadTempleTimings();
+            }
+            
+            // Display results with temple timings - use helper function for safe rendering
+            const templeCards = await Promise.all(templesWithDistance.map(async temple => {
+                const timings = await getTempleTimings(temple);
+                return createTempleCard(temple, timings, {
+                    distance: temple.distance,
+                    isEstimated: temple.isEstimated
+                });
+            }));
+            
+            results.innerHTML = templeCards.join('');
 
             // Center map on user location
             map.setView([location.lat, location.lng], 10);
@@ -2959,11 +1990,11 @@ Version History:
                                 autocompleteList.classList.add('active');
                             }
                         } catch (error) {
-                            console.error('Route planner search error:', error);
+                            logError('Route planner search error:', error);
                             autocompleteList.innerHTML = '<div class="autocomplete-item">Search failed. Please try again.</div>';
                             autocompleteList.classList.add('active');
                         }
-                    }, 300);
+                    }, CONFIG.DEBOUNCE_DELAY);
                 });
                 
                 // Hide autocomplete when clicking outside
@@ -2975,7 +2006,9 @@ Version History:
             });
         }
 
-        // Plan route functionality
+        /**
+         * Plan route between two locations
+         */
         window.planRoute = function() {
             const startInput = document.getElementById('startPoint');
             const endInput = document.getElementById('endPoint');
@@ -2984,98 +2017,124 @@ Version History:
             const errorDiv = document.getElementById('routeError');
             const results = document.getElementById('routeResults');
             
-            if (!startInput.dataset.lat || !endInput.dataset.lat) {
-                errorDiv.style.display = 'block';
-                errorDiv.textContent = 'Please select valid start and end locations from the suggestions.';
+            // Validate inputs
+            if (!startInput || !endInput || !startInput.dataset.lat || !endInput.dataset.lat) {
+                if (errorDiv) {
+                    errorDiv.style.display = 'block';
+                    errorDiv.textContent = 'Please select valid start and end locations from the suggestions.';
+                }
                 return;
             }
             
-            loading.style.display = 'block';
-            errorDiv.style.display = 'none';
-            results.innerHTML = '';
-            
+            // Validate coordinates
             const start = { lat: parseFloat(startInput.dataset.lat), lng: parseFloat(startInput.dataset.lng) };
             const end = { lat: parseFloat(endInput.dataset.lat), lng: parseFloat(endInput.dataset.lng) };
-            const maxDetour = parseInt(detourRange.value);
+            
+            if (!isValidCoordinates(start.lat, start.lng) || !isValidCoordinates(end.lat, end.lng)) {
+                if (errorDiv) {
+                    errorDiv.style.display = 'block';
+                    errorDiv.textContent = 'Invalid coordinates. Please select valid locations.';
+                }
+                return;
+            }
+            
+            const maxDetour = parseInt(detourRange?.value) || CONFIG.DEFAULT_DETOUR_RANGE;
+            
+            if (loading) loading.style.display = 'block';
+            if (errorDiv) errorDiv.style.display = 'none';
+            if (results) results.textContent = ''; // Use textContent instead of innerHTML
             
             // Find temples along route with real road distances and progress
             (async () => {
                 try {
+                    // Ensure temple timings are loaded
+                    if (templeTimingsDB === null) {
+                        await loadTempleTimings();
+                    }
+                    
                     // Progress callback function
                     const updateProgress = (progress, processed, total) => {
-                        loading.innerHTML = `
-                            <div class="loading-spinner"></div>
-                            <p>Calculating route detours... ${progress}%</p>
-                            <small>Processed ${processed} of ${total} temples</small>
-                        `;
+                        if (loading) {
+                            loading.innerHTML = `
+                                <div class="loading-spinner"></div>
+                                <p>Calculating route detours... ${progress}%</p>
+                                <small>Processed ${processed} of ${total} temples</small>
+                            `;
+                        }
                     };
                     
                     const templesAlongRoute = await findTemplesAlongRoute(start, end, maxDetour, updateProgress);
-                    loading.style.display = 'none';
+                    if (loading) loading.style.display = 'none';
                     
                     if (templesAlongRoute.length > 0) {
-                        results.innerHTML = `
+                        // Use helper function for safe rendering
+                        const startLocation = sanitizeHTML(startInput.value || 'Start');
+                        const endLocation = sanitizeHTML(endInput.value || 'End');
+                        
+                        const summaryHTML = `
                             <div class="route-summary">
                                 <strong>Found ${templesAlongRoute.length} temples along your route</strong><br>
-                                Route: ${startInput.value} → ${endInput.value}<br>
-                                <small>Using actual road distances via OpenRoute Service</small>
+                                Route: ${startLocation} → ${endLocation}<br>
+                                <small>Using actual road distances via OSRM</small>
                             </div>
-                            ${templesAlongRoute.map(temple => {
-                                const timings = getTempleTimings(temple);
-                                return `
-                                <div class="temple-card">
-                                    <div class="temple-name">${temple.displayName}</div>
-                                    <div style="font-size: 0.9rem; color: #666; margin: 5px 0;">
-                                        <strong>Perumal:</strong> ${temple.perumal || 'Not specified'} | 
-                                        <strong>Thaayaar:</strong> ${temple.thaayaar || 'Not specified'}
-                                    </div>
-                                    <div style="font-size: 0.85rem; color: #764ba2; margin-bottom: 8px;">
-                                        <strong>Region:</strong> ${temple.region || 'Not specified'}
-                                    </div>
-                                    <div style="margin: 8px 0; padding: 8px; background: rgba(102, 126, 234, 0.1); border-radius: 4px;">
-                                        <div style="font-weight: 500; color: #667eea; font-size: 0.85rem; margin-bottom: 4px;">🕒 Temple Timings:</div>
-                                        ${timings.hours && Array.isArray(timings.hours) ? timings.hours.map(hour => `<div style="font-size: 0.85rem; margin: 3px 0; line-height: 1.3; color: #333; font-weight: 500;">${hour}</div>`).join('') : ''}
-                                        ${timings.note ? `<div style="font-size: 0.75rem; color: #e67e22; margin-top: 4px;">⚠️ ${timings.note}</div>` : ''}
-                                    </div>
-                                    <div class="temple-distance">
-                                        Road Detour: <strong>${temple.detour.toFixed(1)} km</strong>
-                                        <small style="color: #999; display: block;">
-                                            ${CAN_USE_API ? '(Actual route calculation)' : '(Estimated)'}
-                                        </small>
-                                    </div>
-                                    <a href="${temple.link}" target="_blank" class="btn-navigate">Get Directions</a>
-                                </div>
-                                `;
-                            }).join('')}
                         `;
+                        
+                        const templeCards = await Promise.all(templesAlongRoute.map(async temple => {
+                            const timings = await getTempleTimings(temple);
+                            return createTempleCard(temple, timings, {
+                                detour: temple.detour,
+                                isEstimated: false
+                            });
+                        }));
+                        
+                        if (results) {
+                            results.innerHTML = summaryHTML + templeCards.join('');
+                        }
                     } else {
-                        results.innerHTML = '<div class="temple-card">No temples found within the specified detour distance. Try increasing the detour range.</div>';
+                        if (results) {
+                            results.innerHTML = '<div class="temple-card">No temples found within the specified detour distance. Try increasing the detour range.</div>';
+                        }
                     }
                 } catch (error) {
-                    loading.style.display = 'none';
-                    errorDiv.style.display = 'block';
-                    errorDiv.textContent = 'Error calculating route distances. Please try again.';
-                    console.error('Route planning error:', error);
+                    if (loading) loading.style.display = 'none';
+                    if (errorDiv) {
+                        errorDiv.style.display = 'block';
+                        errorDiv.textContent = handleError(error, 'Error calculating route distances. Please try again.');
+                    }
+                    logError('Route planning error:', error);
                 }
             })();
         };
 
-        // Find temples along route with real road distances and progress updates
+        /**
+         * Find temples along a route within maximum detour distance
+         * @param {Object} start - Start location with lat/lng
+         * @param {Object} end - End location with lat/lng
+         * @param {number} maxDetour - Maximum detour distance in km
+         * @param {Function} progressCallback - Optional progress callback
+         * @returns {Promise<Array>} - Array of temples along route
+         */
         async function findTemplesAlongRoute(start, end, maxDetour, progressCallback) {
+            // Validate inputs
+            if (!isValidCoordinates(start.lat, start.lng) || !isValidCoordinates(end.lat, end.lng)) {
+                logError('Invalid coordinates in findTemplesAlongRoute');
+                throw new Error('Invalid coordinates');
+            }
+            
             // Ensure temple data is loaded
             if (!window.divyaDesams || !Array.isArray(window.divyaDesams) || window.divyaDesams.length === 0) {
-                console.log('⏳ Temple data not ready for route planning, waiting...');
+                log('Temple data not ready for route planning, waiting...');
                 await waitForTempleData();
             }
             
-            // Step 1: Pre-filter temples by air distance to avoid checking all 108 temples
-            console.log(`🔍 Pre-filtering ${window.divyaDesams.length} temples by air distance...`);
+            // Step 1: Pre-filter temples by air distance to avoid checking all temples
+            log(`Pre-filtering ${window.divyaDesams.length} temples by air distance...`);
             const routeCenterLat = (start.lat + end.lat) / 2;
             const routeCenterLng = (start.lng + end.lng) / 2;
             const routeDistance = calculateDistance(start.lat, start.lng, end.lat, end.lng);
             
             // Only check temples within reasonable air distance from route center
-            const maxAirDistance = Math.max(50, routeDistance * 0.75); // At least 50km, or 75% of route distance
+            const maxAirDistance = Math.max(CONFIG.MAX_AIR_DISTANCE, routeDistance * 0.75);
             const candidateTemples = window.divyaDesams
                 .filter(temple => temple.lat && temple.lng && temple.lat !== null && temple.lng !== null)
                 .map(temple => ({
@@ -3084,9 +2143,9 @@ Version History:
                 }))
                 .filter(temple => temple.airDistanceFromCenter <= maxAirDistance)
                 .sort((a, b) => a.airDistanceFromCenter - b.airDistanceFromCenter)
-                .slice(0, 20); // Limit to top 20 candidates
+                .slice(0, CONFIG.MAX_CANDIDATE_TEMPLES);
             
-            console.log(`✅ Filtered to ${candidateTemples.length} candidate temples (from ${window.divyaDesams.length} total)`);
+            log(`Filtered to ${candidateTemples.length} candidate temples (from ${window.divyaDesams.length} total)`);
             
             if (progressCallback) {
                 progressCallback(10, candidateTemples.length, candidateTemples.length);
@@ -3094,7 +2153,7 @@ Version History:
             
             // Step 2: Calculate route detours only for candidate temples
             const templesWithDetour = [];
-            const batchSize = 2; // Very small batches for route planning (3 API calls per temple)
+            const batchSize = CONFIG.BATCH_SIZE;
             const totalCandidates = candidateTemples.length;
             
             for (let i = 0; i < candidateTemples.length; i += batchSize) {
@@ -3120,20 +2179,37 @@ Version History:
                 }
             }
             
-            return templesWithDetour
+            const result = templesWithDetour
                 .filter(temple => temple.detour <= maxDetour)
                 .sort((a, b) => a.detour - b.detour)
-                .slice(0, 15);
+                .slice(0, CONFIG.MAX_CANDIDATE_TEMPLES);
+            
+            log(`Found ${result.length} temples within ${maxDetour}km detour`);
+            return result;
         }
 
-        // Calculate detour distance with improved algorithm using real road distances
+        /**
+         * Calculate detour distance when going via a temple
+         * @param {Object} start - Start location with lat/lng
+         * @param {Object} end - End location with lat/lng
+         * @param {Object} temple - Temple object with lat/lng
+         * @returns {Promise<number>} - Detour distance in km
+         */
         async function calculateDetour(start, end, temple) {
+            // Validate inputs
+            if (!isValidCoordinates(start.lat, start.lng) || 
+                !isValidCoordinates(end.lat, end.lng) || 
+                !isValidCoordinates(temple.lat, temple.lng)) {
+                logError('Invalid coordinates in calculateDetour');
+                throw new Error('Invalid coordinates');
+            }
+            
             const directRoadDistance = await calculateRoadDistance(start.lat, start.lng, end.lat, end.lng);
             
             // If start and end are very close (same city), use road distance from start point
             if (directRoadDistance < 2) {
                 const distanceFromStart = await calculateRoadDistance(start.lat, start.lng, temple.lat, temple.lng);
-                console.log(`Temple ${temple.displayName}: Same city route, distance from start: ${distanceFromStart.toFixed(1)}km`);
+                log(`Temple ${temple.displayName}: Same city route, distance from start: ${distanceFromStart.toFixed(1)}km`);
                 return distanceFromStart;
             }
             
@@ -3145,8 +2221,7 @@ Version History:
             const viaTempleRoadDistance = startToTemple + templeToEnd;
             const detour = Math.max(0, viaTempleRoadDistance - directRoadDistance);
             
-            // Debug logging
-            console.log(`Temple ${temple.displayName}: Direct: ${directRoadDistance.toFixed(1)}km, Via temple: ${viaTempleRoadDistance.toFixed(1)}km, Detour: ${detour.toFixed(1)}km`);
+            log(`Temple ${temple.displayName}: Direct: ${directRoadDistance.toFixed(1)}km, Via temple: ${viaTempleRoadDistance.toFixed(1)}km, Detour: ${detour.toFixed(1)}km`);
             
             return detour;
         }
@@ -3204,7 +2279,7 @@ Version History:
                 
                 const url = `${FREE_APIS.nominatim.baseUrl}${FREE_APIS.nominatim.searchEndpoint}?format=json&q=${encodeURIComponent(query + ', India')}&limit=5&countrycodes=in`;
                 
-                console.log(`🌍 Nominatim geocoding: "${query}"`);
+                log(`🌍 Nominatim geocoding: "${query}"`);
                 
                 const response = await fetch(url, {
                     headers: getApiHeaders()
@@ -3230,7 +2305,7 @@ Version History:
                 return { success: false, reason: 'No results found' };
                 
             } catch (error) {
-                console.error('Nominatim geocoding failed:', error);
+                logError('Nominatim geocoding failed:', error);
                 return { success: false, reason: error.message };
             }
         }
@@ -3242,7 +2317,7 @@ Version History:
                 
                 const url = `${FREE_APIS.osrm.baseUrl}${FREE_APIS.osrm.routeEndpoint}/${startLng},${startLat};${endLng},${endLat}?overview=false&steps=false`;
                 
-                console.log(`🛣️ OSRM routing: (${startLat},${startLng}) → (${endLat},${endLng})`);
+                log(`🛣️ OSRM routing: (${startLat},${startLng}) → (${endLat},${endLng})`);
                 
                 const response = await fetch(url);
                 
@@ -3265,7 +2340,7 @@ Version History:
                 return { success: false, reason: 'No route found' };
                 
             } catch (error) {
-                console.error('OSRM routing failed:', error);
+                logError('OSRM routing failed:', error);
                 return { success: false, reason: error.message };
             }
         }
@@ -3297,7 +2372,7 @@ Version History:
                 }
                 
                 // Fallback to straight-line distance
-                console.log('🔄 OSRM failed, using straight-line distance');
+                log('🔄 OSRM failed, using straight-line distance');
                 const straightLineDistance = calculateStraightLineDistance(startLat, startLng, endLat, endLng);
                 const estimatedRoadDistance = straightLineDistance * 1.3; // Rough road distance multiplier
                 const estimatedDuration = estimatedRoadDistance * 1.5; // Rough driving time in minutes
@@ -3311,7 +2386,7 @@ Version History:
                 };
                 
             } catch (error) {
-                console.error('All routing methods failed:', error);
+                logError('All routing methods failed:', error);
                 
                 // Final fallback
                 const distance = calculateStraightLineDistance(startLat, startLng, endLat, endLng);
@@ -3326,13 +2401,13 @@ Version History:
         }
         
         // API Status Messages
-        console.log('🆓 FREE APIs Enabled:');
-        console.log('✅ Primary Geocoding: Nominatim (OpenStreetMap) - Unlimited');
-        console.log('✅ Primary Routing: OSRM - Unlimited');
-        console.log('✅ Fallback: Haversine formula - Always available');
-        console.log('🚫 No API keys required!');
-        console.log('🚫 No usage limits!');
-        console.log('🚫 No costs!');
+        log('🆓 FREE APIs Enabled:');
+        log('✅ Primary Geocoding: Nominatim (OpenStreetMap) - Unlimited');
+        log('✅ Primary Routing: OSRM - Unlimited');
+        log('✅ Fallback: Haversine formula - Always available');
+        log('🚫 No API keys required!');
+        log('🚫 No usage limits!');
+        log('🚫 No costs!');
         
         // Cache for storing route distances to avoid repeated API calls
         const routeCache = new Map();
@@ -3340,8 +2415,6 @@ Version History:
         // Rate limiting variables
         let apiCallCount = 0;
         let lastResetTime = Date.now();
-        const MAX_API_CALLS_PER_MINUTE = 40; // Conservative limit
-        const RATE_LIMIT_WINDOW = 60000; // 1 minute
         
         // Generate cache key for route
         function getCacheKey(lat1, lon1, lat2, lon2) {
@@ -3353,16 +2426,22 @@ Version History:
             const now = Date.now();
             
             // Reset counter if window has passed
-            if (now - lastResetTime > RATE_LIMIT_WINDOW) {
+            if (now - lastResetTime > CONFIG.RATE_LIMIT_WINDOW) {
                 apiCallCount = 0;
                 lastResetTime = now;
             }
             
-            return apiCallCount < MAX_API_CALLS_PER_MINUTE;
+            return apiCallCount < CONFIG.MAX_API_CALLS_PER_MINUTE;
         }
         
-        // Add timeout to fetch requests
-        async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+        /**
+         * Fetch with timeout
+         * @param {string} url - URL to fetch
+         * @param {Object} options - Fetch options
+         * @param {number} timeoutMs - Timeout in milliseconds (defaults to CONFIG.API_TIMEOUT)
+         * @returns {Promise<Response>}
+         */
+        async function fetchWithTimeout(url, options = {}, timeoutMs = CONFIG.API_TIMEOUT) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
             
@@ -3376,7 +2455,7 @@ Version History:
             } catch (error) {
                 clearTimeout(timeoutId);
                 if (error.name === 'AbortError') {
-                    throw new Error('Request timeout after 15 seconds');
+                    throw new Error(`Request timeout after ${timeoutMs / 1000} seconds`);
                 }
                 throw error;
             }
@@ -3389,7 +2468,7 @@ Version History:
             
             // Check cache first
             if (routeCache.has(cacheKey)) {
-                console.log(`📦 Cache hit for route: ${cacheKey}`);
+                log(`📦 Cache hit for route: ${cacheKey}`);
                 return routeCache.get(cacheKey);
             }
             
@@ -3398,7 +2477,7 @@ Version History:
             if (routeCache.has(reverseCacheKey)) {
                 const distance = routeCache.get(reverseCacheKey);
                 routeCache.set(cacheKey, distance);
-                console.log(`📦 Reverse cache hit for route: ${cacheKey}`);
+                log(`📦 Reverse cache hit for route: ${cacheKey}`);
                 return distance;
             }
             
@@ -3409,12 +2488,12 @@ Version History:
                 // Cache the result
                 routeCache.set(cacheKey, routeResult.distance);
                 
-                console.log(`✅ Route calculated: ${routeResult.distance}km via ${routeResult.source} (${routeResult.type})`);
+                log(`✅ Route calculated: ${routeResult.distance}km via ${routeResult.source} (${routeResult.type})`);
                 
                 return routeResult.distance;
                 
             } catch (error) {
-                console.error('Free routing APIs failed:', error);
+                logError('Free routing APIs failed:', error);
                 // Fallback to straight-line distance estimation
                 const straightDistance = calculateStraightLineDistance(lat1, lon1, lat2, lon2);
                 const estimatedRoadDistance = straightDistance * 1.3; // Road distance multiplier
@@ -3422,7 +2501,7 @@ Version History:
                 // Cache the fallback result
                 routeCache.set(cacheKey, estimatedRoadDistance);
                 
-                console.log(`🔄 Using estimated distance: ${estimatedRoadDistance.toFixed(1)}km (straight-line + 30%)`);
+                log(`🔄 Using estimated distance: ${estimatedRoadDistance.toFixed(1)}km (straight-line + 30%)`);
                 
                 return estimatedRoadDistance;
             }
@@ -3479,7 +2558,7 @@ Version History:
         
         // 🆓 FREE Location geocoding using Nominatim
         async function searchLocation(query) {
-            console.log('🔍 Free location search for:', query);
+            log('🔍 Free location search for:', query);
             
             try {
                 // Try Nominatim (OpenStreetMap) first - completely free
@@ -3496,21 +2575,21 @@ Version History:
                         address: nominatimResult.displayName
                     }];
                     
-                    console.log(`🎯 Nominatim found location: ${results[0].name}`);
+                    log(`🎯 Nominatim found location: ${results[0].name}`);
                     return results;
                 }
                 
-                console.log('📭 Nominatim returned no results, trying fallback cities');
+                log('📭 Nominatim returned no results, trying fallback cities');
                 
             } catch (error) {
-                console.error('Free geocoding failed:', error);
-                console.log('🏙️ Using fallback Indian cities list due to error');
+                logError('Free geocoding failed:', error);
+                log('🏙️ Using fallback Indian cities list due to error');
             }
             
             // Fallback to basic Indian cities list
-            console.log('🏙️ Using fallback Indian cities list for search');
+            log('🏙️ Using fallback Indian cities list for search');
             const fallbackResults = searchInFallbackCities(query);
-            console.log(`🔄 Fallback found ${fallbackResults.length} results`);
+            log(`🔄 Fallback found ${fallbackResults.length} results`);
             return fallbackResults;
         }
 
@@ -3520,7 +2599,7 @@ Version History:
             const suggestions = document.getElementById('locationSuggestions');
             
             if (!input || !suggestions) {
-                console.error('Location search elements not found');
+                logError('Location search elements not found');
                 return;
             }
             
@@ -3528,7 +2607,7 @@ Version History:
 
             input.addEventListener('input', function() {
                 const value = this.value.trim();
-                console.log('Location search input:', value);
+                log('Location search input:', value);
                 
                 if (value.length < 2) {
                     suggestions.innerHTML = '';
@@ -3539,32 +2618,44 @@ Version History:
                 // Debounce search requests
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(async () => {
-                    console.log('Searching for location:', value);
+                    log('Searching for location:', value);
                     try {
                         const results = await searchLocation(value);
-                        console.log('Search results:', results);
+                        log('Search results:', results);
                         
                         if (results.length > 0) {
-                            suggestions.innerHTML = results.map(result => `
-                                <div class="suggestion" data-lat="${result.lat}" data-lng="${result.lng}" data-name="${result.name}">
-                                    📍 ${result.name}
-                                    <small style="display: block; color: #999;">${result.type}</small>
+                            // Use sanitized HTML for suggestions
+                            suggestions.innerHTML = results.map(result => {
+                                const name = sanitizeHTML(result.name || '');
+                                const type = sanitizeHTML(result.type || 'location');
+                                const lat = escapeHtmlAttribute(String(result.lat || ''));
+                                const lng = escapeHtmlAttribute(String(result.lng || ''));
+                                const nameAttr = escapeHtmlAttribute(result.name || '');
+                                return `
+                                <div class="suggestion" data-lat="${lat}" data-lng="${lng}" data-name="${nameAttr}">
+                                    📍 ${name}
+                                    <small style="display: block; color: #999;">${type}</small>
                                 </div>
-                            `).join('');
+                            `;
+                            }).join('');
                             
                             suggestions.style.display = 'block';
                             
-                            // Add click handlers
+                            // Add click handlers with validation
                             suggestions.querySelectorAll('.suggestion').forEach(item => {
                                 item.addEventListener('click', function() {
                                     const lat = parseFloat(this.dataset.lat);
                                     const lng = parseFloat(this.dataset.lng);
                                     const name = this.dataset.name;
                                     
-                                    input.value = name;
-                                    input.dataset.lat = lat;
-                                    input.dataset.lng = lng;
-                                    suggestions.style.display = 'none';
+                                    if (isValidCoordinates(lat, lng)) {
+                                        input.value = name;
+                                        input.dataset.lat = lat;
+                                        input.dataset.lng = lng;
+                                        suggestions.style.display = 'none';
+                                    } else {
+                                        logError('Invalid coordinates from suggestion:', {lat, lng});
+                                    }
                                 });
                             });
                         } else {
@@ -3572,11 +2663,11 @@ Version History:
                             suggestions.style.display = 'block';
                         }
                     } catch (error) {
-                        console.error('Search error:', error);
+                        logError('Search error:', error);
                         suggestions.innerHTML = '<div class="suggestion">Search failed. Please try again.</div>';
                         suggestions.style.display = 'block';
                     }
-                }, 500);
+                }, CONFIG.DEBOUNCE_DELAY * 2); // Longer delay for location search (600ms)
             });
 
             // Hide suggestions when clicking outside
@@ -3589,7 +2680,7 @@ Version History:
 
         // Search from selected location
         window.searchFromLocation = async function() {
-            console.log('🌍 Search from location button clicked');
+            log('🌍 Search from location button clicked');
             
             const input = document.getElementById('locationSearch');
             const loading = document.getElementById('loading');
@@ -3599,10 +2690,10 @@ Version History:
             const lat = input.dataset.lat;
             const lng = input.dataset.lng;
             
-            console.log('🔍 Location data:', { lat, lng, inputValue: input.value });
+            log('🔍 Location data:', { lat, lng, inputValue: input.value });
             
             if (!lat || !lng) {
-                console.log('❌ No coordinates found in input dataset');
+                log('❌ No coordinates found in input dataset');
                 error.textContent = 'Please select a location from the search suggestions first.';
                 error.style.display = 'block';
                 return;
@@ -3630,7 +2721,7 @@ Version History:
             const suggestions = document.getElementById('templeSuggestions');
             
             if (!input || !suggestions) {
-                console.log('Temple search elements not found');
+                log('Temple search elements not found');
                 return;
             }
             
@@ -3648,7 +2739,7 @@ Version History:
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => {
                     searchTemplesByName(value, currentTempleFilter);
-                }, 300);
+                }, CONFIG.DEBOUNCE_DELAY);
             });
 
             // Hide suggestions when clicking outside
@@ -3661,7 +2752,7 @@ Version History:
 
         function searchTemplesByName(query, tradition) {
             if (!window.divyaDesams || !Array.isArray(window.divyaDesams)) {
-                console.log('Temple data not loaded yet');
+                log('Temple data not loaded yet');
                 return;
             }
 
@@ -3705,28 +2796,62 @@ Version History:
                 return;
             }
 
-            const html = temples.map(temple => `
-                <div class="autocomplete-item" onclick="console.log('Clicked temple: ${temple.name}'); selectTemple('${temple.name}')"
-                     data-lat="${temple.lat}" data-lng="${temple.lng}" data-name="${temple.displayName}">
-                    <div class="city-name">${temple.displayName}</div>
-                    <div class="city-state">${temple.perumal ? `🕉️ ${temple.perumal}` : ''} • ${temple.region || 'Sacred'}</div>
+            const html = temples.map(temple => {
+                const templeName = escapeHtmlAttribute(temple.name || '');
+                const displayName = sanitizeHTML(temple.displayName || '');
+                const perumal = sanitizeHTML(temple.perumal || '');
+                const region = sanitizeHTML(temple.region || 'Sacred');
+                return `
+                <div class="autocomplete-item temple-search-result"
+                     data-temple-name="${templeName}"
+                     data-lat="${temple.lat}" 
+                     data-lng="${temple.lng}" 
+                     data-name="${escapeHtmlAttribute(temple.displayName || '')}">
+                    <div class="city-name">${displayName}</div>
+                    <div class="city-state">${perumal ? '🕉️ ' + perumal : ''} • ${region}</div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
             suggestions.innerHTML = html;
             suggestions.classList.add('active');
+            
+            // Add event delegation for safe click handling
+            suggestions.querySelectorAll('.temple-search-result').forEach(item => {
+                item.addEventListener('click', function() {
+                    const templeName = this.dataset.templeName;
+                    if (templeName && isValidTempleName(templeName)) {
+                        selectTemple(templeName);
+                    }
+                });
+            });
         }
 
+        /**
+         * Select and navigate to temple details page
+         * @param {string} templeName - Name of the temple
+         */
         window.selectTemple = function(templeName) {
+            // Validate input
+            if (!templeName || !isValidTempleName(templeName)) {
+                logError('Invalid temple name provided:', templeName);
+                return;
+            }
+            
             const temple = window.divyaDesams.find(t => t.name === templeName);
             if (temple) {
-                console.log(`Navigating to temple details page for: ${temple.displayName}`);
+                log(`Navigating to temple details page for: ${temple.displayName}`);
 
                 // Navigate to temple details page with temple data
-                const templeData = encodeURIComponent(JSON.stringify(temple));
-                window.location.href = `temple-details.html?temple=${templeData}`;
+                try {
+                    const templeData = encodeURIComponent(JSON.stringify(temple));
+                    window.location.href = `temple-details.html?temple=${templeData}`;
+                } catch (error) {
+                    logError('Failed to navigate to temple details:', error);
+                    alert(handleError(error, 'Failed to open temple details. Please try again.'));
+                }
             } else {
-                console.warn(`⚠️ Temple "${templeName}" not found in divyaDesams array.`);
+                logWarn(`Temple "${templeName}" not found in divyaDesams array.`);
             }
         };
 
@@ -3765,18 +2890,27 @@ Version History:
         }
 
         // Quick filter functions
-        window.showOpenTemples = function() {
-            console.log('⏰ Showing temples open now...');
+        /**
+         * Show temples currently open
+         */
+        window.showOpenTemples = async function() {
+            log('Showing temples open now...');
             
             const now = new Date();
             const currentHour = now.getHours();
             
             // Simple logic: most temples open 6 AM - 8 PM
             if (currentHour >= 6 && currentHour <= 20) {
+                // Ensure temple timings are loaded
+                if (templeTimingsDB === null) {
+                    await loadTempleTimings();
+                }
+                
                 const openTemples = window.divyaDesams.filter(temple => {
-                    // Check if temple has timing data
-                    const timings = window.templeTimingsDB?.[temple.displayName]?.hours;
-                    if (timings) {
+                    // Check if temple has timing data (use temple.name as key)
+                    const timingData = templeTimingsDB?.[temple.name];
+                    const timings = timingData?.hours;
+                    if (timings && Array.isArray(timings)) {
                         // Parse timing data (simplified)
                         return timings.some(period => {
                             const morningMatch = period.match(/(\d+):(\d+)\s*AM.*?(\d+):(\d+)\s*PM/);
@@ -3787,7 +2921,7 @@ Version History:
                         });
                     }
                     return currentHour >= 6 && currentHour <= 20; // Default temple hours
-                }).slice(0, 20);
+                }).slice(0, CONFIG.MAX_CANDIDATE_TEMPLES);
                 
                 displayFilteredTemples(openTemples, '⏰ Temples Open Now');
             } else {
@@ -3795,19 +2929,27 @@ Version History:
             }
         };
 
-        window.showTemplesWithTimings = function() {
-            console.log('📞 Showing temples with contact info...');
+        /**
+         * Show temples with contact information
+         */
+        window.showTemplesWithTimings = async function() {
+            log('Showing temples with contact info...');
+            
+            // Ensure temple timings are loaded
+            if (templeTimingsDB === null) {
+                await loadTempleTimings();
+            }
             
             const templesWithInfo = window.divyaDesams.filter(temple => {
-                const timingData = window.templeTimingsDB?.[temple.displayName];
-                return timingData?.phone || timingData?.website || timingData?.hours;
-            }).slice(0, 20);
+                const timingData = templeTimingsDB?.[temple.name];
+                return timingData?.phone || timingData?.website || (timingData?.hours && Array.isArray(timingData.hours) && timingData.hours.length > 0);
+            }).slice(0, CONFIG.MAX_CANDIDATE_TEMPLES);
             
             displayFilteredTemples(templesWithInfo, '📞 Temples with Contact Information');
         };
 
         window.showMajorTemples = function() {
-            console.log('⭐ Showing major temples...');
+            log('⭐ Showing major temples...');
             
             const majorTempleKeywords = [
                 'srirangam', 'tirupati', 'madurai', 'chidambaram', 'rameswaram',
@@ -3843,25 +2985,51 @@ Version History:
                 <div style="background: white; border-radius: 10px; padding: 20px; margin: 20px 0;">
                     <h3 style="color: #667eea; margin-bottom: 15px;">${title}</h3>
                     <div style="display: grid; gap: 10px;">
-                        ${temples.map(temple => `
-                            <div style="border: 1px solid #eee; border-radius: 8px; padding: 15px; cursor: pointer; transition: all 0.2s ease;"
-                                 onclick="selectTemple('${temple.name}')" 
-                                 onmouseover="this.style.backgroundColor='#f8f9fa'; this.style.transform='translateY(-2px)'"
-                                 onmouseout="this.style.backgroundColor='white'; this.style.transform='translateY(0)'">
-                                <div style="font-weight: 600; color: #333; margin-bottom: 5px;">${temple.displayName}</div>
+                        ${temples.map(temple => {
+                            const templeName = escapeHtmlAttribute(temple.name || '');
+                            const displayName = sanitizeHTML(temple.displayName || '');
+                            const perumal = sanitizeHTML(temple.perumal || '');
+                            const region = sanitizeHTML(temple.region || '');
+                            const locality = sanitizeHTML(temple.locality || 'Location data available');
+                            return `
+                            <div class="filtered-temple-item" 
+                                 data-temple-name="${templeName}"
+                                 style="border: 1px solid #eee; border-radius: 8px; padding: 15px; cursor: pointer; transition: all 0.2s ease;">
+                                <div style="font-weight: 600; color: #333; margin-bottom: 5px;">${displayName}</div>
                                 <div style="font-size: 0.9rem; color: #666;">
-                                    ${temple.perumal ? `🕉️ ${temple.perumal}` : ''}${temple.perumal && temple.region ? ' • ' : ''}${temple.region || ''}
+                                    ${perumal ? '🕉️ ' + perumal : ''}${perumal && region ? ' • ' : ''}${region}
                                 </div>
                                 <div style="font-size: 0.85rem; color: #999; margin-top: 5px;">
-                                    📍 ${temple.locality || 'Location data available'}
+                                    📍 ${locality}
                                 </div>
                             </div>
-                        `).join('')}
+                        `;
+                        }).join('')}
                     </div>
                 </div>
             `;
             
             results.innerHTML = html;
+            
+            // Add event delegation for safe click handling
+            results.querySelectorAll('.filtered-temple-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const templeName = this.dataset.templeName;
+                    if (templeName && isValidTempleName(templeName)) {
+                        selectTemple(templeName);
+                    }
+                });
+                
+                // Add hover effects via JavaScript
+                item.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8f9fa';
+                    this.style.transform = 'translateY(-2px)';
+                });
+                item.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = 'white';
+                    this.style.transform = 'translateY(0)';
+                });
+            });
         }
         
         // Temple timings scraping functionality
@@ -3869,7 +3037,7 @@ Version History:
             try {
                 // Temporarily disable scraping due to CORS issues with allorigins.win
                 // Return fallback timing information instead
-                console.log(`Timings scraping temporarily disabled for ${templeName} - using fallback`);
+                log(`Timings scraping temporarily disabled for ${templeName} - using fallback`);
                 
                 // Return standard temple timings as fallback (matching expected structure)
                 return {
@@ -3888,7 +3056,7 @@ Version History:
                 // return timings;
                 
             } catch (error) {
-                console.warn(`Failed to get timings for ${templeName}:`, error);
+                logWarn(`Failed to get timings for ${templeName}:`, error);
                 return {
                     hours: ["Please contact temple directly"],
                     note: "Timing information unavailable",
@@ -3983,7 +3151,7 @@ Version History:
         // Batch process temple timings
         async function enrichTemplesWithTimings(temples, progressCallback) {
             const enrichedTemples = [];
-            const batchSize = 2; // Small batches to avoid rate limiting
+            const batchSize = CONFIG.BATCH_SIZE; // Small batches to avoid rate limiting
             
             for (let i = 0; i < temples.length; i += batchSize) {
                 const batch = temples.slice(i, i + batchSize);
@@ -4070,16 +3238,19 @@ Version History:
                 detourValue.textContent = this.value;
             });
             
-            // Wait for temple data to load, then initialize 
-            waitForTempleData().then(async () => {
+            // Wait for temple data and timings to load, then initialize 
+            Promise.all([
+                waitForTempleData(),
+                loadTempleTimings() // Load temple timings in parallel
+            ]).then(async () => {
                 // Initialize app (always enabled with free APIs!)
                 await initMap();
                 setupAutocomplete();
                 setupLocationSearch();
                 setupTempleAutocomplete();
-                console.log('🚀 App initialized successfully with free APIs!');
+                log('App initialized successfully with free APIs!');
             }).catch(error => {
-                console.error('❌ App initialization failed:', error);
+                logError('App initialization failed:', error);
                 const errorDiv = document.getElementById('error');
                 if (errorDiv) {
                     errorDiv.innerHTML = `
