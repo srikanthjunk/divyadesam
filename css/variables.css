@@ -1,12 +1,12 @@
 /* variables.css - CSS Custom Properties */
-/* Divya Desam Temple Locator v4.0.0 */
+/* BhaktiMap v4.0.0 */
 
 :root {
-  /* Colors - Temple Theme */
-  --color-primary: #ff6b35;
-  --color-secondary: #f7931e;
-  --color-accent: #c1121f;
-  --color-sacred: #780000;
+  /* Colors - BhaktiMap Purple Theme */
+  --color-primary: #667eea;
+  --color-secondary: #764ba2;
+  --color-accent: #5a67d8;
+  --color-sacred: #764ba2;
 
   /* Neutral Colors */
   --color-text: #2b2d42;

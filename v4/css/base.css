@@ -1,5 +1,5 @@
 /* base.css - Base Styles */
-/* Divya Desam Temple Locator v4.0.0 */
+/* BhaktiMap v4.0.0 */
 
 * {
   box-sizing: border-box;
@@ -18,7 +18,8 @@ body {
   font-size: var(--font-md);
   line-height: 1.6;
   color: var(--color-text);
-  background-color: var(--color-bg-light);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
 }
 
 .container {
@@ -28,7 +29,8 @@ body {
 }
 
 header {
-  background: linear-gradient(135deg, var(--color-sacred) 0%, var(--color-accent) 100%);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
   color: white;
   padding: var(--spacing-lg) 0;
   margin-bottom: var(--spacing-xl);
