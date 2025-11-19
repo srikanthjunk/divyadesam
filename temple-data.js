@@ -3056,8 +3056,8 @@ window.divyaDesams = [
     "wikidata_qid": null
   },
   {
-    "name": "Sri Ranganathaswamy Temple",
-    "displayName": "Sri Ranganathaswamy Temple",
+    "name": "Sri Ranganathaswamy Temple, Srirangapatna",
+    "displayName": "Sri Ranganathaswamy Temple, Srirangapatna",
     "lat": 12.424167,
     "lng": 76.683056,
     "link": "https://www.google.com/maps/search/Sri%20Ranganathaswamy%20Temple%20Srirangapatna%20Karnataka",
@@ -3434,18 +3434,18 @@ window.divyaDesams = [
     "wikidata_qid": "Q2671548"
   },
   {
-    "name": "ThiruArangam",
-    "displayName": "ThiruArangam",
+    "name": "Sri Ranganathaswamy Temple, Srirangam",
+    "displayName": "Sri Ranganathaswamy Temple, Srirangam",
     "lat": 10.862,
     "lng": 78.696,
-    "link": "https://www.google.com/maps/search/ThiruArangam%20%20",
-    "perumal": "Unknown",
-    "thaayaar": null,
-    "locality": "",
-    "district": null,
-    "state": "",
-    "region": "Sacred Temple",
-    "wikidata_qid": "Q135983201"
+    "link": "https://www.google.com/maps/search/Sri%20Ranganathaswamy%20Temple%20Srirangam%20Tamil%20Nadu",
+    "perumal": "Sri Ranganathar",
+    "thaayaar": "Sri Ranganayaki",
+    "locality": "Srirangam",
+    "district": "Tiruchirappalli",
+    "state": "Tamil Nadu",
+    "region": "Divya Desam",
+    "wikidata_qid": "Q3595527"
   },
   {
     "name": "ThiruArimeya Vinnagaram",

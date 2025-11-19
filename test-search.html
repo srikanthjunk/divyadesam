@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Test</title>
+</head>
+<body>
+    <h1>Search Test</h1>
+    <div id="output"></div>
+
+    <script src="temple-data.js"></script>
+    <script>
+        const log = (msg) => {
+            const div = document.createElement('div');
+            div.textContent = msg;
+            document.getElementById('output').appendChild(div);
+            console.log(msg);
+        };
+
+        async function test() {
+            log('Starting test...');
+            
+            if (!window.divyaDesams || window.divyaDesams.length === 0) {
+                log('❌ Temple data not loaded!');
+                return;
+            }
+            log(`✅ Loaded ${window.divyaDesams.length} temples.`);
+
+            // Test Temple Search
+            const query = 'Srirangam';
+            const matches = window.divyaDesams.filter(temple => 
+                temple.displayName.toLowerCase().includes(query.toLowerCase())
+            );
+            log(`Found ${matches.length} matches for "${query}"`);
+            if (matches.length > 0) {
+                log(`First match: ${matches[0].displayName}`);
+            } else {
+                log('❌ Temple search failed');
+            }
+
+            // Test Location Search (Nominatim)
+            const locationQuery = 'Chennai';
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationQuery + ', India')}&limit=1&countrycodes=in`;
+            
+            try {
+                log(`Fetching location for "${locationQuery}"...`);
+                const response = await fetch(url, {
+                    headers: {
+                        'User-Agent': 'DivyaDesamLocatorTest/1.0'
+                    }
+                });
+                if (!response.ok) throw new Error(response.statusText);
+                const data = await response.json();
+                if (data.length > 0) {
+                    log(`✅ Location found: ${data[0].display_name} (${data[0].lat}, ${data[0].lon})`);
+                } else {
+                    log('❌ Location search returned no results');
+                }
+            } catch (e) {
+                log(`❌ Location search failed: ${e.message}`);
+            }
+        }
+
+        // Wait for temple data to load if it's async (it's not, but good practice)
+        if (window.divyaDesams) {
+            test();
+        } else {
+            window.onload = test;
+        }
+    </script>
+</body>
+</html>
