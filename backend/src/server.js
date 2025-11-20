@@ -282,6 +282,60 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+/**
+ * GET /api/test/prokerala
+ * Test Prokerala API connection
+ */
+app.get('/api/test/prokerala', async (req, res) => {
+  try {
+    const token = await prokerola.getAccessToken();
+    res.json({
+      success: true,
+      message: 'Prokerala API connected',
+      hasToken: !!token
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/test/email
+ * Test email service
+ */
+app.get('/api/test/email', async (req, res) => {
+  try {
+    const testResult = {
+      success: true,
+      message: 'Email service configured',
+      hasApiKey: !!process.env.RESEND_API_KEY
+    };
+    res.json(testResult);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/test/env
+ * Check environment variables (without exposing secrets)
+ */
+app.get('/api/test/env', (req, res) => {
+  res.json({
+    hasProkerolaCreds: !!(process.env.PROKERALA_CLIENT_ID && process.env.PROKEROLA_CLIENT_SECRET),
+    hasResendKey: !!process.env.RESEND_API_KEY,
+    nodeEnv: process.env.NODE_ENV,
+    frontendUrl: process.env.FRONTEND_URL,
+    dbPath: process.env.DB_PATH
+  });
+});
+
 // ========================================
 // Start Server
 // ========================================
