@@ -29,10 +29,16 @@ class ProkerolaService {
     }
 
     try {
-      const response = await axios.post(`${this.baseUrl}/token`, {
-        grant_type: 'client_credentials',
-        client_id: this.clientId,
-        client_secret: this.clientSecret
+      // Prokerala requires form-encoded data, not JSON
+      const params = new URLSearchParams();
+      params.append('grant_type', 'client_credentials');
+      params.append('client_id', this.clientId);
+      params.append('client_secret', this.clientSecret);
+
+      const response = await axios.post(`${this.baseUrl}/token`, params, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
       });
 
       this.accessToken = response.data.access_token;
@@ -41,7 +47,7 @@ class ProkerolaService {
       console.log('✅ Prokerala access token obtained');
       return this.accessToken;
     } catch (error) {
-      console.error('❌ Failed to get Prokerala token:', error.message);
+      console.error('❌ Failed to get Prokerala token:', error.response?.data || error.message);
       throw new Error('Failed to authenticate with Prokerala API');
     }
   }
