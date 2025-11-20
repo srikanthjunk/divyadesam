@@ -4,7 +4,7 @@
   "description": "Backend API for BhaktiMap Peyarchi feature",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node src/init-database.js && node src/server.js",
     "dev": "nodemon src/server.js",
     "init-db": "node src/init-database.js",
     "test-prokerala": "node src/test-prokerala.js",
