@@ -1,61 +1,28 @@
 /**
- * Prokerala API Service
+ * Prokerala API Service using Official SDK
  * Handles all Prokerala API calls with rate limiting
  * Rate limit: 5 requests/minute, 5000 credits/month
  */
 
-const axios = require('axios');
+const Prokerala = require('@prokerala/astrology-sdk');
 
 class ProkerolaService {
   constructor(clientId, clientSecret) {
     this.clientId = clientId;
     this.clientSecret = clientSecret;
-    this.baseUrl = 'https://api.prokerala.com';
-    this.accessToken = null;
-    this.tokenExpiry = null;
+
+    // Initialize Prokerala client with credentials
+    this.client = new Prokerala.Client(clientId, clientSecret);
 
     // Rate limiting: Max 5 requests per minute
-    this.requestQueue = [];
     this.lastRequestTime = 0;
     this.minRequestInterval = 12000; // 12 seconds between requests (5 per minute)
   }
 
   /**
-   * Get OAuth access token
+   * Rate-limited API call wrapper
    */
-  async getAccessToken() {
-    if (this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry) {
-      return this.accessToken;
-    }
-
-    try {
-      // Prokerala requires form-encoded data, not JSON
-      const params = new URLSearchParams();
-      params.append('grant_type', 'client_credentials');
-      params.append('client_id', this.clientId);
-      params.append('client_secret', this.clientSecret);
-
-      const response = await axios.post(`${this.baseUrl}/token`, params, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
-      });
-
-      this.accessToken = response.data.access_token;
-      this.tokenExpiry = Date.now() + (response.data.expires_in * 1000);
-
-      console.log('✅ Prokerala access token obtained');
-      return this.accessToken;
-    } catch (error) {
-      console.error('❌ Failed to get Prokerala token:', error.response?.data || error.message);
-      throw new Error('Failed to authenticate with Prokerala API');
-    }
-  }
-
-  /**
-   * Rate-limited API call
-   */
-  async rateLimitedRequest(url, params) {
+  async rateLimitedRequest(apiCall) {
     const now = Date.now();
     const timeSinceLastRequest = now - this.lastRequestTime;
 
@@ -66,16 +33,7 @@ class ProkerolaService {
     }
 
     this.lastRequestTime = Date.now();
-
-    const token = await this.getAccessToken();
-    const response = await axios.get(url, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      params
-    });
-
-    return response.data;
+    return await apiCall();
   }
 
   /**
@@ -83,103 +41,44 @@ class ProkerolaService {
    * Returns: nakshatra, rashi, lagna, and other birth details
    */
   async getBirthChart(dateOfBirth, timeOfBirth, latitude, longitude) {
-    const url = `${this.baseUrl}/v2/astrology/kundli`;
-
-    const params = {
-      ayanamsa: 1, // Lahiri ayanamsa (most common for Indian astrology)
-      datetime: `${dateOfBirth}T${timeOfBirth}`,
-      coordinates: `${latitude},${longitude}`,
-      la: 'en' // Language: English
-    };
-
     try {
-      const data = await this.rateLimitedRequest(url, params);
+      console.log(`📊 Fetching birth chart from Prokerala...`);
 
+      const result = await this.rateLimitedRequest(async () => {
+        // Create location object
+        const location = new Prokerala.Location(latitude, longitude);
+
+        // Create datetime object
+        const datetime = new Date(`${dateOfBirth}T${timeOfBirth}`);
+
+        // Get Kundli (birth chart)
+        const kundli = await this.client.kundli({
+          datetime,
+          location,
+          ayanamsa: 1 // Lahiri ayanamsa
+        });
+
+        return kundli;
+      });
+
+      console.log('✅ Birth chart received from Prokerala');
+
+      // Extract relevant data
       return {
-        nakshatra: data.nakshatra?.name,
-        nakshatra_pada: data.nakshatra?.pada,
-        nakshatra_lord: data.nakshatra?.lord,
-        rashi: data.rasi?.name,
-        rashi_lord: data.rasi?.lord,
-        lagna: data.lagna?.name,
-        lagna_lord: data.lagna?.lord,
-        moon_sign: data.moon_sign,
-        sun_sign: data.sun_sign,
-        raw_data: data
+        nakshatra: result.nakshatra?.name || 'Unknown',
+        nakshatra_pada: result.nakshatra?.pada || null,
+        nakshatra_lord: result.nakshatra?.lord || null,
+        rashi: result.rasi?.name || 'Unknown',
+        rashi_lord: result.rasi?.lord || null,
+        lagna: result.lagna?.name || 'Unknown',
+        lagna_lord: result.lagna?.lord || null,
+        moon_sign: result.moon_sign || null,
+        sun_sign: result.sun_sign || null,
+        raw_data: result
       };
     } catch (error) {
-      console.error('❌ Prokerala birth chart error:', error.response?.data || error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Get current planetary positions (Panchang)
-   */
-  async getCurrentPanchang(latitude, longitude) {
-    const url = `${this.baseUrl}/v2/astrology/panchang`;
-
-    const now = new Date();
-    const datetime = now.toISOString().split('.')[0]; // Remove milliseconds
-
-    const params = {
-      ayanamsa: 1,
-      datetime,
-      coordinates: `${latitude},${longitude}`,
-      la: 'en'
-    };
-
-    try {
-      const data = await this.rateLimitedRequest(url, params);
-      return data;
-    } catch (error) {
-      console.error('❌ Prokerala panchang error:', error.response?.data || error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Get planetary positions (for peyarchi calculation)
-   */
-  async getPlanetaryPositions(datetime, latitude, longitude) {
-    const url = `${this.baseUrl}/v2/astrology/planet-position`;
-
-    const params = {
-      datetime,
-      coordinates: `${latitude},${longitude}`,
-      la: 'en'
-    };
-
-    try {
-      const data = await this.rateLimitedRequest(url, params);
-      return data;
-    } catch (error) {
-      console.error('❌ Prokerala planetary positions error:', error.response?.data || error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Calculate peyarchi (transit) effects for a person
-   */
-  async getPeyarchiEffects(birthRashi, birthNakshatra, currentDate = new Date()) {
-    // This is a simplified version - you may need to adjust based on Prokerala's actual API
-    const url = `${this.baseUrl}/v2/astrology/transit-prediction`;
-
-    const params = {
-      birth_rasi: birthRashi,
-      birth_nakshatra: birthNakshatra,
-      date: currentDate.toISOString().split('T')[0],
-      la: 'en'
-    };
-
-    try {
-      const data = await this.rateLimitedRequest(url, params);
-      return this.parsePeyarchiData(data);
-    } catch (error) {
-      console.error('❌ Prokerala peyarchi error:', error.response?.data || error.message);
-      // If specific API doesn't exist, we'll calculate manually
-      return this.calculatePeyarchiManually(birthRashi);
+      console.error('❌ Prokerala birth chart error:', error.message);
+      throw new Error('Failed to fetch birth chart from Prokerala');
     }
   }
 
@@ -285,18 +184,6 @@ class ProkerolaService {
     };
 
     return scoreMap[planet]?.[house] || 0;
-  }
-
-  /**
-   * Parse peyarchi data from Prokerala response
-   */
-  parsePeyarchiData(data) {
-    // Adjust based on actual Prokerala API response structure
-    return {
-      current_transits: data.transits || {},
-      predictions: data.predictions || [],
-      remedies: data.remedies || []
-    };
   }
 }
 
