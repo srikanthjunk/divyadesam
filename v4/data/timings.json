@@ -1,423 +1,423 @@
 {
   "ThiruArangam": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 6:00 AM - 1:00 PM",
+      "Evening: 4:00 PM - 9:00 PM"
     ],
     "phone": "+914312432246",
     "website": "http://www.srirangam.org",
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKoazhi": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
+      "Morning: 6:30 AM - 12:00 PM",
       "Evening: 4:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKarambanoor": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 6:30 AM - 1:00 PM",
+      "Evening: 4:30 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruVellarai": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 1:00 PM",
+      "Evening: 3:30 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruAnbil": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
+      "Morning: 7:00 AM - 12:30 PM",
       "Evening: 4:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruPer Nagar": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:30 PM",
+      "Evening: 4:30 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKandiyur": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:00 PM",
+      "Evening: 5:00 PM - 7:30 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKoodalur": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:30 AM - 12:30 PM",
+      "Evening: 4:30 PM - 8:30 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKavithalam": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:00 PM",
+      "Evening: 5:00 PM - 7:30 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruPullam boothangudi": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:00 PM",
+      "Evening: 4:00 PM - 7:30 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruAthanoor": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
+      "Morning: 7:00 AM - 12:30 PM",
       "Evening: 4:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKudanthai": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:00 PM",
+      "Evening: 5:00 PM - 9:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruVinnagar": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 6:00 AM - 1:00 PM",
+      "Evening: 4:00 PM - 9:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruNaraiyur": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 6:30 AM - 12:30 PM",
+      "Evening: 4:30 PM - 8:30 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruCherai": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:00 PM",
+      "Evening: 4:00 PM - 7:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKannamangai": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:30 AM - 12:30 PM",
+      "Evening: 5:00 PM - 8:30 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKannapuram": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:15 PM",
+      "Evening: 4:30 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKannangudi": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 8:00 AM - 12:00 PM",
+      "Evening: 5:00 PM - 9:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruNaagai": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:30 AM - 12:00 PM",
+      "Evening: 5:30 PM - 9:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruThanjai Maamani Kovil": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:00 PM",
+      "Evening: 5:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruNandipura Vinnagaram": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 8:00 AM - 11:30 AM",
+      "Evening: 4:30 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruVelliyangudi": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 8:00 AM - 12:00 PM",
+      "Evening: 5:00 PM - 7:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruAzhundhur": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:30 AM - 12:00 PM",
+      "Evening: 5:00 PM - 8:30 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruChirupuliyoor": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:00 PM",
+      "Evening: 5:30 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruThalaichanganaanmadhiyam": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 10:00 AM - 12:00 PM",
+      "Evening: 5:00 PM - 7:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruIndhalur": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 6:30 AM - 11:30 AM",
+      "Evening: 5:00 PM - 8:30 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKavalambadi": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 8:00 AM - 10:00 AM",
+      "Evening: 5:00 PM - 7:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKaazhisrirama Vinnagaram": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:30 AM - 11:30 AM",
+      "Evening: 4:30 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruArimeya Vinnagaram": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 8:00 AM - 11:00 AM",
+      "Evening: 5:00 PM - 7:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruVanpurushothamam": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 9:00 AM - 11:30 AM",
+      "Evening: 6:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruSemponsei Kovil": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 10:00 AM",
+      "Evening: 6:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruManimaada Kovil": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 10:00 AM",
+      "Evening: 5:00 PM - 7:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruVaikuntha Vinnagaram": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 8:00 AM - 10:00 AM",
+      "Evening: 5:00 PM - 7:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruAali": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 8:00 AM - 10:00 AM",
+      "Evening: 5:00 PM - 7:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruThevanaarthogai": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 8:00 AM - 10:00 AM",
+      "Evening: 5:00 PM - 7:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruThetriyambalam": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 8:00 AM - 10:00 AM",
+      "Evening: 5:00 PM - 7:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruManikkoodam": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 8:00 AM - 10:00 AM",
+      "Evening: 5:00 PM - 7:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruVellakkulam": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:00 PM",
+      "Evening: 5:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruParthan Palli": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 8:00 AM - 10:00 AM",
+      "Evening: 5:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruChithrakootam": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 6:30 AM - 12:00 PM",
+      "Evening: 5:00 PM - 10:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruAheendrapuram": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 6:30 AM - 12:00 PM",
+      "Evening: 4:00 PM - 8:30 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKovalur": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 6:30 AM - 12:00 PM",
+      "Evening: 4:00 PM - 8:30 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKachchi": {
     "hours": [
@@ -561,83 +561,83 @@
   },
   "ThiruPutkuzhi": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:00 PM",
+      "Evening: 4:00 PM - 7:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruNindravur": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 6:30 AM - 11:30 AM",
+      "Evening: 4:30 PM - 8:30 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruEvvul": {
     "hours": [
       "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Evening: 4:00 PM - 9:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruAllikkeni": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 6:00 AM - 12:30 PM",
+      "Evening: 4:00 PM - 9:00 PM"
     ],
     "phone": "+914428442449",
     "website": "http://en.wikipedia.org/wiki/Parthasarathy_Temple",
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruNeermalai": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
+      "Morning: 8:00 AM - 12:00 PM",
       "Evening: 4:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruIdaventhai": {
     "hours": [
       "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Evening: 3:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKadanmallai": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:00 PM",
+      "Evening: 3:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKadigai": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 6:30 AM - 12:30 PM",
+      "Evening: 4:30 PM - 8:30 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruAyodhi": {
     "hours": [
@@ -890,113 +890,113 @@
   },
   "ThiruKurungudi": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 6:30 AM - 12:00 PM",
+      "Evening: 5:00 PM - 9:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruChireevaramangai": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 8:00 AM - 12:00 PM",
+      "Evening: 5:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruVaikuntam": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:00 PM",
+      "Evening: 5:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruVaragunamangai": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:00 PM",
+      "Evening: 5:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruPulingudi": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:30 AM - 12:00 PM",
+      "Evening: 4:30 PM - 7:30 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruThulaivillimangalam": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 8:00 AM - 1:00 PM",
+      "Evening: 2:00 PM - 6:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKulandhai": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:30 AM - 12:30 PM",
+      "Evening: 4:30 PM - 7:30 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKolur": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:30 AM - 12:00 PM",
+      "Evening: 5:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruPerai": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:00 PM",
+      "Evening: 5:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKurugur": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:30 AM - 12:00 PM",
+      "Evening: 5:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruVilliputhur": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 6:30 AM - 12:00 PM",
+      "Evening: 4:00 PM - 8:30 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruThankaal": {
     "hours": [
@@ -1005,38 +1005,38 @@
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKudal": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 6:30 AM - 12:00 PM",
+      "Evening: 4:00 PM - 9:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruMaaliruncholai": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 6:00 AM - 12:30 PM",
+      "Evening: 3:30 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruMogur": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
+      "Morning: 7:00 AM - 12:00 PM",
       "Evening: 4:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruKottiyur": {
     "hours": [
@@ -1045,37 +1045,37 @@
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruPullaani": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: 7:00 AM - 12:30 PM",
+      "Evening: 4:30 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruMeyyam": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
+      "Morning: 7:00 AM - 12:00 PM",
       "Evening: 4:00 PM - 8:00 PM"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   },
   "ThiruParamapatham": {
     "hours": [
-      "Morning: 6:00 AM - 12:00 PM",
-      "Evening: 4:00 PM - 8:00 PM"
+      "Morning: Open Eternal",
+      "Evening: Open Eternal"
     ],
     "phone": null,
     "website": null,
-    "status": "standard_pattern",
-    "source": "tamil_nadu_standard"
+    "status": "verified",
+    "source": "user_verified_2024"
   }
 }
