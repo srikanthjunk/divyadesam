@@ -1,0 +1,27 @@
+{
+  "name": "bhaktimap-backend",
+  "version": "1.0.0",
+  "description": "Backend API for BhaktiMap Peyarchi feature",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "init-db": "node src/init-database.js",
+    "test-prokerala": "node src/test-prokerala.js",
+    "send-alerts": "node src/jobs/send-alerts.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "better-sqlite3": "^9.2.2",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.7",
+    "uuid": "^9.0.1",
+    "express-rate-limit": "^7.1.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
