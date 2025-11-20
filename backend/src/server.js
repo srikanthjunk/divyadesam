@@ -328,11 +328,11 @@ app.get('/api/test/email', async (req, res) => {
  */
 app.get('/api/test/env', (req, res) => {
   res.json({
-    hasProkerolaCreds: !!(process.env.PROKERALA_CLIENT_ID && process.env.PROKEROLA_CLIENT_SECRET),
+    hasProkerolaCreds: !!(process.env.PROKERALA_CLIENT_ID && process.env.PROKERALA_CLIENT_SECRET),
     hasResendKey: !!process.env.RESEND_API_KEY,
     nodeEnv: process.env.NODE_ENV,
     frontendUrl: process.env.FRONTEND_URL,
-    dbPath: process.env.DB_PATH
+    dbPath: process.env.DB_PATH || './database/bhaktimap.db'
   });
 });
 
