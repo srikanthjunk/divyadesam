@@ -10,7 +10,7 @@ class ProkerolaService {
   constructor(clientId, clientSecret) {
     this.clientId = clientId;
     this.clientSecret = clientSecret;
-    this.baseUrl = 'https://api.prokerala.com/v2';
+    this.baseUrl = 'https://api.prokerala.com';
     this.accessToken = null;
     this.tokenExpiry = null;
 
@@ -83,7 +83,7 @@ class ProkerolaService {
    * Returns: nakshatra, rashi, lagna, and other birth details
    */
   async getBirthChart(dateOfBirth, timeOfBirth, latitude, longitude) {
-    const url = `${this.baseUrl}/astrology/kundli`;
+    const url = `${this.baseUrl}/v2/astrology/kundli`;
 
     const params = {
       ayanamsa: 1, // Lahiri ayanamsa (most common for Indian astrology)
@@ -117,7 +117,7 @@ class ProkerolaService {
    * Get current planetary positions (Panchang)
    */
   async getCurrentPanchang(latitude, longitude) {
-    const url = `${this.baseUrl}/astrology/panchang`;
+    const url = `${this.baseUrl}/v2/astrology/panchang`;
 
     const now = new Date();
     const datetime = now.toISOString().split('.')[0]; // Remove milliseconds
@@ -142,7 +142,7 @@ class ProkerolaService {
    * Get planetary positions (for peyarchi calculation)
    */
   async getPlanetaryPositions(datetime, latitude, longitude) {
-    const url = `${this.baseUrl}/astrology/planet-position`;
+    const url = `${this.baseUrl}/v2/astrology/planet-position`;
 
     const params = {
       datetime,
@@ -164,7 +164,7 @@ class ProkerolaService {
    */
   async getPeyarchiEffects(birthRashi, birthNakshatra, currentDate = new Date()) {
     // This is a simplified version - you may need to adjust based on Prokerala's actual API
-    const url = `${this.baseUrl}/astrology/transit-prediction`;
+    const url = `${this.baseUrl}/v2/astrology/transit-prediction`;
 
     const params = {
       birth_rasi: birthRashi,

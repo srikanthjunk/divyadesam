@@ -29,6 +29,9 @@ db.pragma('foreign_keys = ON');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy - Railway uses reverse proxy
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*'
