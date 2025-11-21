@@ -352,9 +352,31 @@
             overflow-y: auto;
         }
 
-        .modal h3 {
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
+        }
+
+        .modal h3 {
+            margin: 0;
             color: #667eea;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.3s;
+        }
+
+        .modal-close:hover {
+            color: #333;
         }
 
         .modal-actions {
@@ -536,7 +558,10 @@
     <!-- Add Member Modal -->
     <div id="add-member-modal" class="modal-overlay">
         <div class="modal">
-            <h3>Add Family Member</h3>
+            <div class="modal-header">
+                <h3>Add Family Member</h3>
+                <button class="modal-close" onclick="closeAddMemberModal()">&times;</button>
+            </div>
             <div id="member-error" class="error-message" style="display: none;"></div>
 
             <div class="form-group">
