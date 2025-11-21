@@ -382,6 +382,60 @@
             line-height: 1.8;
         }
 
+        .explanation {
+            background: #f0f9ff;
+            border-left: 4px solid #667eea;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: #444;
+        }
+
+        .temple-recommendation {
+            background: #fef3c7;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .temple-recommendation h4 {
+            margin-bottom: 10px;
+            color: #92400e;
+        }
+
+        .pariharam-section {
+            background: #f0fdf4;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .pariharam-section h4 {
+            margin-bottom: 10px;
+            color: #166534;
+        }
+
+        .pariharam-section p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .btn-small {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .btn-small:hover {
+            background: #5a67d8;
+        }
+
         /* Temple Recommendations */
         .temple-recommendations {
             background: white;
@@ -854,31 +908,64 @@
             container.innerHTML = '';
 
             const planets = {
-                'Sani': { icon: '🪐', name: 'Saturn' },
-                'Guru': { icon: '🌟', name: 'Jupiter' },
-                'Rahu': { icon: '🌑', name: 'Rahu' },
-                'Ketu': { icon: '☄️', name: 'Ketu' }
+                'Sani': { icon: '🪐', name: 'Shani', tamilName: 'சனி' },
+                'Guru': { icon: '🌟', name: 'Guru', tamilName: 'குரு' },
+                'Rahu': { icon: '🌑', name: 'Rahu', tamilName: 'ராகு' },
+                'Ketu': { icon: '☄️', name: 'Ketu', tamilName: 'கேது' }
             };
 
             for (const [planet, data] of Object.entries(peyarchiData)) {
                 if (!planets[planet]) continue;
 
                 const effectClass = data.effect.effect;
+                const rashiDisplay = data.rashi_tamil || data.rashi;
                 const card = document.createElement('div');
                 card.className = `planet-card ${effectClass}`;
+
+                // Build pariharam HTML if available
+                let pariharamHtml = '';
+                if (data.pariharam) {
+                    pariharamHtml = `
+                        <div class="pariharam-section">
+                            <h4>🙏 Pariharam (Remedies)</h4>
+                            ${data.pariharam.rituals ? `<p><strong>Rituals:</strong> ${data.pariharam.rituals.join(', ')}</p>` : ''}
+                            ${data.pariharam.mantras ? `<p><strong>Mantras:</strong> ${data.pariharam.mantras.join(', ')}</p>` : ''}
+                            ${data.pariharam.donations ? `<p><strong>Donations:</strong> ${data.pariharam.donations.join(', ')}</p>` : ''}
+                            ${data.pariharam.fasting ? `<p><strong>Fasting:</strong> ${data.pariharam.fasting}</p>` : ''}
+                        </div>
+                    `;
+                }
+
+                // Build temple HTML if available
+                let templeHtml = '';
+                if (data.temple) {
+                    templeHtml = `
+                        <div class="temple-recommendation">
+                            <h4>🏛️ Recommended Temple</h4>
+                            <p><strong>${data.temple.name}</strong></p>
+                            <p>${data.temple.location} - ${data.temple.deity}</p>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=${data.temple.coordinates.lat},${data.temple.coordinates.lng}"
+                               target="_blank" class="btn-small">Get Directions →</a>
+                        </div>
+                    `;
+                }
+
                 card.innerHTML = `
                     <div class="planet-header">
                         <div class="planet-name">
-                            ${planets[planet].icon} ${planet} (${planets[planet].name})
+                            ${planets[planet].icon} ${planet} (${planets[planet].tamilName})
                         </div>
                         <span class="effect-badge ${effectClass}">
                             ${effectClass}
                         </span>
                     </div>
                     <div class="planet-details">
-                        <p><strong>Position:</strong> ${data.rashi} (${data.house_from_moon}th house from Moon)</p>
+                        <p><strong>Position:</strong> ${rashiDisplay} (${data.house_from_moon}th house from Moon)</p>
                         <p><strong>Period:</strong> ${data.start} to ${data.end}</p>
                         <p><strong>Effect:</strong> ${data.effect.desc}</p>
+                        ${data.explanation ? `<div class="explanation"><strong>Analysis:</strong> ${data.explanation}</div>` : ''}
+                        ${templeHtml}
+                        ${pariharamHtml}
                     </div>
                 `;
                 container.appendChild(card);
@@ -980,7 +1067,7 @@
 
     <!-- Version Footer -->
     <div id="version-footer" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; padding: 5px 12px; border-radius: 15px; font-size: 11px; z-index: 1000;">
-        v1.2.0 | 21-NOV-2025
+        v1.3.0 | 21-NOV-2025
     </div>
 </body>
 </html>
