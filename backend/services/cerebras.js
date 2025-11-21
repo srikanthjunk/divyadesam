@@ -74,10 +74,11 @@ Keep the response concise and practical.`;
   }
 
   /**
-   * Get Tamil name for rashi
+   * Get Tamil name for rashi (handles both English and Sanskrit names)
    */
-  getTamilRashi(englishRashi) {
+  getTamilRashi(rashi) {
     const tamilNames = {
+      // English names
       'Aries': 'Mesham',
       'Taurus': 'Rishabam',
       'Gemini': 'Mithunam',
@@ -89,9 +90,22 @@ Keep the response concise and practical.`;
       'Sagittarius': 'Dhanusu',
       'Capricorn': 'Makaram',
       'Aquarius': 'Kumbam',
-      'Pisces': 'Meenam'
+      'Pisces': 'Meenam',
+      // Sanskrit/Hindi names (from Prokerala API)
+      'Mesha': 'Mesham',
+      'Vrishabha': 'Rishabam',
+      'Mithuna': 'Mithunam',
+      'Karka': 'Kadagam',
+      'Simha': 'Simmam',
+      'Kanya': 'Kanni',
+      'Tula': 'Thulam',
+      'Vrishchika': 'Viruchigam',
+      'Dhanu': 'Dhanusu',
+      'Makara': 'Makaram',
+      'Kumbha': 'Kumbam',
+      'Meena': 'Meenam'
     };
-    return tamilNames[englishRashi] || englishRashi;
+    return tamilNames[rashi] || rashi;
   }
 
   /**
