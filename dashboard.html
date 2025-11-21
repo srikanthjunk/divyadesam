@@ -285,6 +285,45 @@
             color: white;
         }
 
+        /* Location Autocomplete */
+        .location-input-wrapper {
+            position: relative;
+        }
+
+        .location-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #667eea;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+
+        .location-suggestions.active {
+            display: block;
+        }
+
+        .location-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .location-item:hover {
+            background: #f0f0ff;
+        }
+
+        .location-item:last-child {
+            border-bottom: none;
+        }
+
         /* Add Member Modal */
         .modal-overlay {
             display: none;
@@ -529,7 +568,10 @@
             </div>
             <div class="form-group">
                 <label>Place of Birth</label>
-                <input type="text" id="member-place" placeholder="City, Country">
+                <div class="location-input-wrapper">
+                    <input type="text" id="member-place" placeholder="Start typing city name..." autocomplete="off">
+                    <div id="location-suggestions" class="location-suggestions"></div>
+                </div>
             </div>
 
             <div class="modal-actions">
@@ -551,6 +593,8 @@
         let authToken = localStorage.getItem('bhaktimap_token');
         let currentUser = null;
         let familyData = null;
+        let selectedLocation = null;
+        let locationTimeout = null;
 
         // ========================================
         // Initialization
@@ -562,7 +606,92 @@
             } else {
                 showAuth();
             }
+
+            // Initialize location autocomplete
+            initLocationAutocomplete();
         });
+
+        // ========================================
+        // Location Autocomplete
+        // ========================================
+        function initLocationAutocomplete() {
+            const placeInput = document.getElementById('member-place');
+            const suggestionsDiv = document.getElementById('location-suggestions');
+
+            if (!placeInput || !suggestionsDiv) return;
+
+            placeInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+
+                if (query.length < 3) {
+                    suggestionsDiv.classList.remove('active');
+                    return;
+                }
+
+                clearTimeout(locationTimeout);
+                locationTimeout = setTimeout(async () => {
+                    await searchLocation(query);
+                }, 500);
+            });
+
+            // Close suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!placeInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                    suggestionsDiv.classList.remove('active');
+                }
+            });
+        }
+
+        async function searchLocation(query) {
+            const suggestionsDiv = document.getElementById('location-suggestions');
+
+            try {
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}, India&limit=5`,
+                    {
+                        headers: {
+                            'User-Agent': 'BhaktiMap/1.0'
+                        }
+                    }
+                );
+
+                const results = await response.json();
+                displayLocationSuggestions(results);
+            } catch (error) {
+                console.error('Location search error:', error);
+                suggestionsDiv.classList.remove('active');
+            }
+        }
+
+        function displayLocationSuggestions(results) {
+            const suggestionsDiv = document.getElementById('location-suggestions');
+            suggestionsDiv.innerHTML = '';
+
+            if (results.length === 0) {
+                suggestionsDiv.classList.remove('active');
+                return;
+            }
+
+            results.forEach(result => {
+                const item = document.createElement('div');
+                item.className = 'location-item';
+                item.textContent = result.display_name;
+                item.onclick = () => selectLocation(result);
+                suggestionsDiv.appendChild(item);
+            });
+
+            suggestionsDiv.classList.add('active');
+        }
+
+        function selectLocation(location) {
+            selectedLocation = {
+                name: location.display_name,
+                latitude: parseFloat(location.lat),
+                longitude: parseFloat(location.lon)
+            };
+            document.getElementById('member-place').value = location.display_name;
+            document.getElementById('location-suggestions').classList.remove('active');
+        }
 
         // ========================================
         // Auth Functions
@@ -830,6 +959,8 @@
             document.getElementById('member-dob').value = '';
             document.getElementById('member-tob').value = '';
             document.getElementById('member-place').value = '';
+            document.getElementById('location-suggestions').classList.remove('active');
+            selectedLocation = null; // Reset selected location
         }
 
         async function handleAddMember() {
@@ -845,10 +976,17 @@
                 return;
             }
 
+            // Validate location is selected from autocomplete
+            if (placeOfBirth && !selectedLocation) {
+                showError('member-error', 'Please select a location from the suggestions');
+                return;
+            }
+
             try {
-                // Get coordinates from place (simplified - using default for now)
-                let latitude = 13.0827; // Chennai default
-                let longitude = 80.2707;
+                // Use selected location or default to Chennai
+                let latitude = selectedLocation?.latitude || 13.0827;
+                let longitude = selectedLocation?.longitude || 80.2707;
+                let placeName = selectedLocation?.name || placeOfBirth || 'Chennai, India';
 
                 const response = await fetch(`${API_BASE_URL}/family/members`, {
                     method: 'POST',
@@ -862,7 +1000,7 @@
                         email,
                         dateOfBirth,
                         timeOfBirth,
-                        placeOfBirth,
+                        placeOfBirth: placeName,
                         latitude,
                         longitude
                     })
