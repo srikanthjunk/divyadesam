@@ -9,7 +9,7 @@ class CerebrasService {
   constructor(apiKey) {
     this.apiKey = apiKey;
     this.baseUrl = 'https://api.cerebras.ai/v1';
-    this.model = 'llama-4-scout-17b-16e-instruct';
+    this.model = 'llama-3.3-70b';
   }
 
   /**
