@@ -179,34 +179,48 @@ class ProkerolaService {
   }
 
   /**
+   * Format date as dd-MMM-yyyy (e.g., 01-JAN-2025)
+   */
+  formatDate(dateStr) {
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
+
+  /**
    * Manual peyarchi calculation based on current planetary positions
    */
   calculatePeyarchiManually(birthRashi) {
-    // Current peyarchi positions (as of 2024-2025 - update periodically)
-    const currentTransits = {
+    const today = new Date();
+
+    // Current peyarchi positions (updated November 2025)
+    const allTransits = {
       Sani: {
-        rashi: 'Aquarius', // Kumbha
-        start: '2023-01-17',
-        end: '2025-03-29',
-        description: 'Saturn in Aquarius'
+        rashi: 'Pisces', // Meena - Saturn entered Pisces on March 29, 2025
+        start: '2025-03-29',
+        end: '2028-02-23',
+        description: 'Saturn in Pisces'
       },
       Guru: {
-        rashi: 'Taurus', // Vrishabha
-        start: '2024-05-01',
-        end: '2025-05-14',
-        description: 'Jupiter in Taurus'
+        rashi: 'Gemini', // Mithuna - Jupiter entered Gemini on May 14, 2025
+        start: '2025-05-14',
+        end: '2026-06-14',
+        description: 'Jupiter in Gemini'
       },
       Rahu: {
-        rashi: 'Pisces', // Meena
-        start: '2023-10-30',
-        end: '2025-05-18',
-        description: 'Rahu in Pisces'
+        rashi: 'Aquarius', // Kumbha - Rahu entered Aquarius on May 18, 2025
+        start: '2025-05-18',
+        end: '2027-01-29',
+        description: 'Rahu in Aquarius'
       },
       Ketu: {
-        rashi: 'Virgo', // Kanya
-        start: '2023-10-30',
-        end: '2025-05-18',
-        description: 'Ketu in Virgo'
+        rashi: 'Leo', // Simha - Ketu entered Leo on May 18, 2025
+        start: '2025-05-18',
+        end: '2027-01-29',
+        description: 'Ketu in Leo'
       }
     };
 
@@ -218,13 +232,22 @@ class ProkerolaService {
 
     const effects = {};
 
-    for (const [planet, transit] of Object.entries(currentTransits)) {
+    for (const [planet, transit] of Object.entries(allTransits)) {
+      const endDate = new Date(transit.end);
+
+      // Skip transits that have already ended
+      if (endDate < today) {
+        continue;
+      }
+
       const birthRashiIndex = rashiOrder.indexOf(birthRashi);
       const transitRashiIndex = rashiOrder.indexOf(transit.rashi);
       const housePosition = ((transitRashiIndex - birthRashiIndex + 12) % 12) + 1;
 
       effects[planet] = {
         ...transit,
+        start: this.formatDate(transit.start),
+        end: this.formatDate(transit.end),
         house_from_moon: housePosition,
         effect: this.getEffectByHouse(planet, housePosition),
         effect_score: this.getEffectScore(planet, housePosition)
