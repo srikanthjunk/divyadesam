@@ -14,6 +14,10 @@ const ProkerolaService = require('../services/prokerala');
 const EmailService = require('../services/email');
 const CerebrasService = require('../services/cerebras');
 
+// Import routes
+const authRoutes = require('./routes/auth');
+const familyRoutes = require('./routes/family');
+
 // Initialize services
 const prokerola = new ProkerolaService(
   process.env.PROKERALA_CLIENT_ID,
@@ -47,8 +51,20 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// Share db and services with routes
+app.locals.db = db;
+app.locals.prokerola = prokerola;
+app.locals.cerebras = cerebras;
+app.locals.emailService = emailService;
+
 // ========================================
-// API Routes
+// Auth & Family Routes
+// ========================================
+app.use('/api/auth', authRoutes);
+app.use('/api/family', familyRoutes);
+
+// ========================================
+// Legacy API Routes (existing peyarchi)
 // ========================================
 
 /**

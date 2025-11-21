@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BhaktiMap - Family Dashboard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .user-info {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd6;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        /* Auth Forms */
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .auth-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .auth-toggle {
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+        }
+
+        .auth-toggle a {
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        /* Dashboard */
+        .dashboard {
+            display: none;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Family Members List */
+        .member-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .member-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .member-card.has-warning {
+            border-left-color: #ff9800;
+        }
+
+        .member-card.has-critical {
+            border-left-color: #e74c3c;
+        }
+
+        .member-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .member-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .member-relationship {
+            font-size: 0.85rem;
+            color: #666;
+            background: #e0e0e0;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .member-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .detail-item {
+            font-size: 0.9rem;
+        }
+
+        .detail-label {
+            color: #888;
+            font-size: 0.8rem;
+        }
+
+        .detail-value {
+            font-weight: 500;
+            color: #333;
+        }
+
+        /* Peyarchi Status */
+        .peyarchi-summary {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .peyarchi-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            margin: 3px;
+        }
+
+        .peyarchi-item.favorable {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .peyarchi-item.neutral {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .peyarchi-item.unfavorable {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .peyarchi-item.critical {
+            background: #f44336;
+            color: white;
+        }
+
+        /* Add Member Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        /* Subscription Banner */
+        .subscription-banner {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .subscription-banner.premium {
+            background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading::before {
+            content: '';
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #667eea;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state p {
+            margin-bottom: 15px;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            color: rgba(255,255,255,0.8);
+            padding: 20px;
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .member-details {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Section -->
+    <div id="auth-section" class="auth-container">
+        <!-- Login Form -->
+        <div id="login-form">
+            <h2>Welcome to BhaktiMap</h2>
+            <div id="login-error" class="error-message" style="display: none;"></div>
+
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="login-email" placeholder="your@email.com" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="login-password" placeholder="Enter password" required>
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="handleLogin()">Login</button>
+
+            <p class="auth-toggle">
+                Don't have an account? <a onclick="showSignup()">Sign up</a>
+            </p>
+        </div>
+
+        <!-- Signup Form -->
+        <div id="signup-form" style="display: none;">
+            <h2>Create Account</h2>
+            <div id="signup-error" class="error-message" style="display: none;"></div>
+
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="signup-name" placeholder="Your name" required>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="signup-email" placeholder="your@email.com" required>
+            </div>
+            <div class="form-group">
+                <label>Phone (optional)</label>
+                <input type="tel" id="signup-phone" placeholder="+91 98765 43210">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signup-password" placeholder="Min 6 characters" required>
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="handleSignup()">Create Account</button>
+
+            <p class="auth-toggle">
+                Already have an account? <a onclick="showLogin()">Login</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div id="dashboard-section" class="container dashboard">
+        <header>
+            <h1>BhaktiMap</h1>
+            <div class="header-actions">
+                <span class="user-info" id="user-name"></span>
+                <button class="btn btn-secondary btn-small" onclick="handleLogout()">Logout</button>
+            </div>
+        </header>
+
+        <!-- Subscription Banner -->
+        <div id="subscription-banner" class="subscription-banner">
+            <div>
+                <strong>Free Plan</strong> - Add up to 1 family member
+            </div>
+            <button class="btn btn-secondary btn-small" onclick="showUpgradeModal()">Upgrade</button>
+        </div>
+
+        <!-- Family Card -->
+        <div class="card">
+            <h3>
+                <span id="family-name">My Family</span>
+                <button class="btn btn-primary btn-small" onclick="showAddMemberModal()">+ Add Member</button>
+            </h3>
+
+            <div id="members-loading" class="loading">Loading family members...</div>
+            <div id="members-empty" class="empty-state" style="display: none;">
+                <p>No family members added yet.</p>
+                <button class="btn btn-primary" onclick="showAddMemberModal()">Add Your First Family Member</button>
+            </div>
+            <div id="members-list" class="member-list" style="display: none;"></div>
+        </div>
+
+        <footer>
+            <a href="peyarchi.html">Try Peyarchi Analysis</a> |
+            <a href="divya-desam-locator.html">Temple Locator</a>
+            <br><br>
+            BhaktiMap Family Dashboard v1.0.0
+        </footer>
+    </div>
+
+    <!-- Add Member Modal -->
+    <div id="add-member-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Add Family Member</h3>
+            <div id="member-error" class="error-message" style="display: none;"></div>
+
+            <div class="form-group">
+                <label>Name *</label>
+                <input type="text" id="member-name" placeholder="Family member's name" required>
+            </div>
+            <div class="form-group">
+                <label>Relationship</label>
+                <select id="member-relationship">
+                    <option value="self">Self</option>
+                    <option value="spouse">Spouse</option>
+                    <option value="child">Child</option>
+                    <option value="parent">Parent</option>
+                    <option value="sibling">Sibling</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Email (for notifications)</label>
+                <input type="email" id="member-email" placeholder="email@example.com">
+            </div>
+            <div class="form-group">
+                <label>Date of Birth *</label>
+                <input type="date" id="member-dob" required>
+            </div>
+            <div class="form-group">
+                <label>Time of Birth *</label>
+                <input type="time" id="member-tob" required>
+            </div>
+            <div class="form-group">
+                <label>Place of Birth</label>
+                <input type="text" id="member-place" placeholder="City, Country">
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeAddMemberModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="handleAddMember()">Add Member</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // Configuration
+        // ========================================
+        const API_BASE_URL = 'https://api.bhaktimap.com/api';
+
+        // ========================================
+        // State
+        // ========================================
+        let authToken = localStorage.getItem('bhaktimap_token');
+        let currentUser = null;
+        let familyData = null;
+
+        // ========================================
+        // Initialization
+        // ========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            if (authToken) {
+                showDashboard();
+                loadUserData();
+            } else {
+                showAuth();
+            }
+        });
+
+        // ========================================
+        // Auth Functions
+        // ========================================
+        function showAuth() {
+            document.getElementById('auth-section').style.display = 'block';
+            document.getElementById('dashboard-section').classList.remove('active');
+        }
+
+        function showDashboard() {
+            document.getElementById('auth-section').style.display = 'none';
+            document.getElementById('dashboard-section').classList.add('active');
+        }
+
+        function showLogin() {
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('signup-form').style.display = 'none';
+        }
+
+        function showSignup() {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('signup-form').style.display = 'block';
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            if (!email || !password) {
+                showError('login-error', 'Please enter email and password');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Login failed');
+                }
+
+                // Save token and show dashboard
+                authToken = data.token;
+                localStorage.setItem('bhaktimap_token', authToken);
+                currentUser = data.user;
+
+                showDashboard();
+                loadUserData();
+
+            } catch (error) {
+                showError('login-error', error.message);
+            }
+        }
+
+        async function handleSignup() {
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const phone = document.getElementById('signup-phone').value;
+            const password = document.getElementById('signup-password').value;
+
+            if (!name || !email || !password) {
+                showError('signup-error', 'Please fill all required fields');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('signup-error', 'Password must be at least 6 characters');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, phone, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Signup failed');
+                }
+
+                // Save token and show dashboard
+                authToken = data.token;
+                localStorage.setItem('bhaktimap_token', authToken);
+                currentUser = data.user;
+
+                showDashboard();
+                loadUserData();
+
+            } catch (error) {
+                showError('signup-error', error.message);
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('bhaktimap_token');
+            authToken = null;
+            currentUser = null;
+            familyData = null;
+            showAuth();
+            showLogin();
+        }
+
+        // ========================================
+        // Dashboard Functions
+        // ========================================
+        async function loadUserData() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        handleLogout();
+                        return;
+                    }
+                    throw new Error('Failed to load user data');
+                }
+
+                const data = await response.json();
+                currentUser = data.user;
+
+                // Update UI
+                document.getElementById('user-name').textContent = currentUser.name || currentUser.email;
+                updateSubscriptionBanner();
+
+                // Load family
+                loadFamily();
+
+            } catch (error) {
+                console.error('Load user error:', error);
+            }
+        }
+
+        async function loadFamily() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/family`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load family');
+
+                familyData = await response.json();
+
+                // Update UI
+                document.getElementById('family-name').textContent = familyData.family_group?.name || 'My Family';
+                renderMembers(familyData.members || []);
+
+            } catch (error) {
+                console.error('Load family error:', error);
+                document.getElementById('members-loading').textContent = 'Failed to load family members';
+            }
+        }
+
+        function renderMembers(members) {
+            const loadingEl = document.getElementById('members-loading');
+            const emptyEl = document.getElementById('members-empty');
+            const listEl = document.getElementById('members-list');
+
+            loadingEl.style.display = 'none';
+
+            if (members.length === 0) {
+                emptyEl.style.display = 'block';
+                listEl.style.display = 'none';
+                return;
+            }
+
+            emptyEl.style.display = 'none';
+            listEl.style.display = 'grid';
+
+            listEl.innerHTML = members.map(member => {
+                const peyarchi = member.current_peyarchi || {};
+                const peyarchiItems = Object.entries(peyarchi).map(([planet, data]) => {
+                    const effect = data.effect?.effect || 'neutral';
+                    return `<span class="peyarchi-item ${effect}">${planet}: ${effect}</span>`;
+                }).join('');
+
+                // Determine card class based on worst effect
+                let cardClass = 'member-card';
+                const effects = Object.values(peyarchi).map(p => p.effect?.effect);
+                if (effects.includes('critical')) cardClass += ' has-critical';
+                else if (effects.includes('unfavorable')) cardClass += ' has-warning';
+
+                return `
+                    <div class="${cardClass}">
+                        <div class="member-header">
+                            <span class="member-name">${member.name}</span>
+                            <span class="member-relationship">${member.relationship || 'Family'}</span>
+                        </div>
+                        <div class="member-details">
+                            <div class="detail-item">
+                                <div class="detail-label">Nakshatra</div>
+                                <div class="detail-value">${member.nakshatra || '-'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Rashi</div>
+                                <div class="detail-value">${member.rashi || '-'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">DOB</div>
+                                <div class="detail-value">${member.date_of_birth || '-'}</div>
+                            </div>
+                        </div>
+                        ${peyarchiItems ? `
+                            <div class="peyarchi-summary">
+                                <div class="detail-label" style="margin-bottom: 5px;">Current Peyarchi</div>
+                                ${peyarchiItems}
+                            </div>
+                        ` : ''}
+                        <div style="margin-top: 10px;">
+                            <button class="btn btn-secondary btn-small" onclick="viewMemberDetails('${member.id}')">View Details</button>
+                            <button class="btn btn-small" style="background: #e0e0e0;" onclick="deleteMember('${member.id}')">Remove</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateSubscriptionBanner() {
+            const banner = document.getElementById('subscription-banner');
+            const tier = currentUser?.subscription_tier || 'free';
+
+            const limits = { free: 1, family: 5, joint_family: 15 };
+            const names = { free: 'Free Plan', family: 'Family Plan', joint_family: 'Joint Family Plan' };
+
+            if (tier !== 'free') {
+                banner.classList.add('premium');
+                banner.innerHTML = `
+                    <div>
+                        <strong>${names[tier]}</strong> - Up to ${limits[tier]} family members
+                    </div>
+                    <span>Active</span>
+                `;
+            } else {
+                banner.innerHTML = `
+                    <div>
+                        <strong>Free Plan</strong> - Add up to 1 family member
+                    </div>
+                    <button class="btn btn-secondary btn-small" onclick="showUpgradeModal()">Upgrade</button>
+                `;
+            }
+        }
+
+        // ========================================
+        // Add Member Functions
+        // ========================================
+        function showAddMemberModal() {
+            document.getElementById('add-member-modal').classList.add('active');
+            document.getElementById('member-error').style.display = 'none';
+        }
+
+        function closeAddMemberModal() {
+            document.getElementById('add-member-modal').classList.remove('active');
+            // Clear form
+            document.getElementById('member-name').value = '';
+            document.getElementById('member-email').value = '';
+            document.getElementById('member-dob').value = '';
+            document.getElementById('member-tob').value = '';
+            document.getElementById('member-place').value = '';
+        }
+
+        async function handleAddMember() {
+            const name = document.getElementById('member-name').value;
+            const relationship = document.getElementById('member-relationship').value;
+            const email = document.getElementById('member-email').value;
+            const dateOfBirth = document.getElementById('member-dob').value;
+            const timeOfBirth = document.getElementById('member-tob').value;
+            const placeOfBirth = document.getElementById('member-place').value;
+
+            if (!name || !dateOfBirth || !timeOfBirth) {
+                showError('member-error', 'Please fill name, date of birth, and time of birth');
+                return;
+            }
+
+            try {
+                // Get coordinates from place (simplified - using default for now)
+                let latitude = 13.0827; // Chennai default
+                let longitude = 80.2707;
+
+                const response = await fetch(`${API_BASE_URL}/family/members`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        name,
+                        relationship,
+                        email,
+                        dateOfBirth,
+                        timeOfBirth,
+                        placeOfBirth,
+                        latitude,
+                        longitude
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to add member');
+                }
+
+                closeAddMemberModal();
+                loadFamily(); // Refresh list
+
+            } catch (error) {
+                showError('member-error', error.message);
+            }
+        }
+
+        async function deleteMember(memberId) {
+            if (!confirm('Are you sure you want to remove this family member?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/family/members/${memberId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to remove member');
+
+                loadFamily(); // Refresh list
+
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        function viewMemberDetails(memberId) {
+            // For now, redirect to peyarchi page
+            // In future, show detailed modal
+            alert('Detailed view coming soon! Check the peyarchi summary above.');
+        }
+
+        function showUpgradeModal() {
+            alert('Subscription plans coming soon! You will be able to:\n\n- Family Plan ($2.99/mo): Up to 5 members\n- Joint Family ($4.99/mo): Up to 15 members\n\nIncludes email alerts for all family members when peyarchi changes.');
+        }
+
+        // ========================================
+        // Utility Functions
+        // ========================================
+        function showError(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
