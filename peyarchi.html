@@ -632,6 +632,145 @@
                 align-items: flex-start;
             }
         }
+
+        /* Signup Banner */
+        .signup-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 16px;
+            margin-top: 25px;
+            text-align: center;
+            display: none;
+        }
+
+        .signup-banner.active {
+            display: block;
+        }
+
+        .signup-banner h3 {
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+        }
+
+        .signup-banner p {
+            margin-bottom: 20px;
+            opacity: 0.95;
+        }
+
+        .signup-banner-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .signup-banner-buttons button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .btn-signup {
+            background: white;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .btn-signup:hover {
+            background: #f0f0ff;
+            transform: translateY(-2px);
+        }
+
+        .btn-guest {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.5) !important;
+        }
+
+        .btn-guest:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Signup Modal */
+        .signup-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .signup-modal-overlay.active {
+            display: flex;
+        }
+
+        .signup-modal {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .signup-modal h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .signup-modal p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .signup-modal .form-group {
+            text-align: left;
+            margin-bottom: 15px;
+        }
+
+        .signup-modal label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .signup-modal input {
+            width: 100%;
+        }
+
+        .signup-modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .signup-modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+        }
+
+        .signup-error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -735,6 +874,36 @@
                 </div>
             </div>
 
+            <!-- Signup Banner (shown after results) -->
+            <div id="signupBanner" class="signup-banner">
+                <h3>🔔 Get Peyarchi Alerts for Your Family</h3>
+                <p>Create a free account to save your birth details, add family members, and receive email alerts when important planetary transits occur.</p>
+                <div class="signup-banner-buttons">
+                    <button class="btn-signup" onclick="showSignupModal()">Create Free Account</button>
+                    <button class="btn-guest" onclick="dismissSignupBanner()">Continue as Guest</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Signup Modal -->
+        <div id="signupModalOverlay" class="signup-modal-overlay">
+            <div class="signup-modal">
+                <h3>Create Your Account</h3>
+                <p>Your birth details will be saved automatically. Add family members from your dashboard.</p>
+
+                <div id="signupModalError" class="signup-error"></div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="signupPassword" placeholder="Min 6 characters" required>
+                </div>
+
+                <div class="signup-modal-buttons">
+                    <button style="background: #e0e0e0; color: #333;" onclick="closeSignupModal()">Cancel</button>
+                    <button style="background: #667eea; color: white;" onclick="handleQuickSignup()">Create Account</button>
+                </div>
+            </div>
         </div>
 
         <!-- Footer -->
@@ -862,6 +1031,9 @@
                 alertFrequency: document.getElementById('alertFrequency').value
             };
 
+            // Save for signup
+            lastFormData = formData;
+
             await submitPeyarchiForm(formData);
         });
 
@@ -902,6 +1074,9 @@
             }
         }
 
+        // Store form data for signup
+        let lastFormData = null;
+
         function displayResults(data) {
             // Display Birth Chart
             displayBirthChart(data.birthChart);
@@ -911,6 +1086,11 @@
 
             // Show results section
             resultsSection.classList.add('active');
+
+            // Show signup banner (unless already logged in or dismissed)
+            if (!localStorage.getItem('bhaktimap_token') && !sessionStorage.getItem('signup_dismissed')) {
+                document.getElementById('signupBanner').classList.add('active');
+            }
 
             // Scroll to results
             resultsSection.scrollIntoView({ behavior: 'smooth' });
@@ -1129,11 +1309,108 @@
             errorMessage.classList.remove('active');
             successMessage.classList.remove('active');
         }
+
+        // ========================================
+        // Signup Functions
+        // ========================================
+        function showSignupModal() {
+            document.getElementById('signupModalOverlay').classList.add('active');
+            document.getElementById('signupModalError').style.display = 'none';
+        }
+
+        function closeSignupModal() {
+            document.getElementById('signupModalOverlay').classList.remove('active');
+        }
+
+        function dismissSignupBanner() {
+            document.getElementById('signupBanner').classList.remove('active');
+            sessionStorage.setItem('signup_dismissed', 'true');
+        }
+
+        async function handleQuickSignup() {
+            const password = document.getElementById('signupPassword').value;
+            const errorDiv = document.getElementById('signupModalError');
+
+            if (!password || password.length < 6) {
+                errorDiv.textContent = 'Password must be at least 6 characters';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (!lastFormData) {
+                errorDiv.textContent = 'Please submit the peyarchi form first';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                // Create account
+                const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: lastFormData.email,
+                        password: password,
+                        name: lastFormData.name,
+                        phone: ''
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Signup failed');
+                }
+
+                // Save token
+                localStorage.setItem('bhaktimap_token', data.token);
+
+                // Add self as family member with birth details
+                const memberResponse = await fetch(`${API_BASE_URL}/family/members`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${data.token}`
+                    },
+                    body: JSON.stringify({
+                        name: lastFormData.name,
+                        relationship: 'self',
+                        email: lastFormData.email,
+                        dateOfBirth: lastFormData.dateOfBirth,
+                        timeOfBirth: lastFormData.timeOfBirth,
+                        placeOfBirth: lastFormData.placeOfBirth,
+                        latitude: lastFormData.latitude,
+                        longitude: lastFormData.longitude
+                    })
+                });
+
+                closeSignupModal();
+                document.getElementById('signupBanner').classList.remove('active');
+
+                // Show success and redirect option
+                showSuccess('Account created! Your birth details have been saved. Visit your dashboard to add family members.');
+
+                // Replace banner with success message
+                const banner = document.getElementById('signupBanner');
+                banner.innerHTML = `
+                    <h3>Account Created Successfully!</h3>
+                    <p>Your birth details have been saved. Add family members to get alerts for everyone.</p>
+                    <div class="signup-banner-buttons">
+                        <button class="btn-signup" onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
+                    </div>
+                `;
+                banner.classList.add('active');
+
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
     </script>
 
     <!-- Version Footer -->
     <div id="version-footer" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; padding: 5px 12px; border-radius: 15px; font-size: 11px; z-index: 1000;">
-        v1.4.1 | 21-NOV-2025
+        v1.5.2 | 21-NOV-2025
     </div>
 </body>
 </html>
