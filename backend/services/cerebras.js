@@ -63,14 +63,19 @@ Provide practical advice and specific temple recommendations from the Navagraha 
     const tamilRashi = this.getTamilRashi(rashi);
     const tamilBirthRashi = this.getTamilRashi(birthRashi);
 
+    // Get the correct temple name from our data (don't let LLM hallucinate)
+    const temple = this.getShivaTemple(planet);
+
     return `A person with Moon in ${tamilBirthRashi} rashi is experiencing ${planet} peyarchi (transit) in ${tamilRashi} rashi, which is their ${housePosition}th house. The effect is "${effect.effect}" - "${effect.desc}".
 
-Please provide in 3-4 sentences:
-1. What this transit means for them (using Tamil terms)
-2. Which Navagraha temple they should visit for pariharam
-3. Specific pariharam (remedy) they should perform
+The correct Navagraha temple for ${planet} pariharam is ${temple.name} in ${temple.location}.
 
-Keep the response concise and practical.`;
+Please provide in 3-4 sentences:
+1. What this transit means for them specifically (using Tamil astrological terms like Sade Sati, Ashtama Shani, etc.)
+2. How this will affect their life during this period
+3. General spiritual advice for this transit
+
+DO NOT recommend any other temple - the correct temple is already specified above. Keep the response concise and practical.`;
   }
 
   /**
