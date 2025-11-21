@@ -309,10 +309,10 @@ pm2 save
 pm2 start src/jobs/send-alerts.js --cron "0 8 * * *" --name bhaktimap-alerts --no-autorestart
 ```
 
-#### Option B: Railway/Render (Free Tier)
-1. Connect GitHub repository
-2. Set environment variables
-3. Auto-deploys on push
+#### Option B: Hetzner VPS
+1. SSH into server
+2. Install Node.js and dependencies
+3. Setup PM2 for process management
 
 #### Option C: Vercel Serverless
 1. Install Vercel CLI: `npm i -g vercel`

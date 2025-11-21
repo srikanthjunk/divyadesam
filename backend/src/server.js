@@ -29,7 +29,7 @@ db.pragma('foreign_keys = ON');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Trust proxy - Railway uses reverse proxy
+// Trust proxy for reverse proxies
 app.set('trust proxy', 1);
 
 // Middleware

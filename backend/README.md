@@ -225,10 +225,10 @@ node backend/src/test-prokerala.js
 - Deploy API routes as serverless functions
 - Note: SQLite needs to use `/tmp` directory
 
-### Option 3: Render/Railway
-- Connect GitHub repo
-- Set environment variables
-- Auto-deploy on push
+### Option 3: Hetzner VPS
+- Cost-effective dedicated server
+- Install Node.js and dependencies
+- Use PM2 for process management
 
 ## Monitoring
 
