@@ -104,19 +104,22 @@ class ProkerolaService {
       console.log('✅ Birth chart received from Prokerala');
 
       // Extract relevant data from API response
-      const data = result.data || result;
+      // Structure: result.data.nakshatra_details contains all birth chart info
+      const apiData = result.data || result;
+      const details = apiData.nakshatra_details || {};
 
       return {
-        nakshatra: data.nakshatra?.name || data.nakshatra_details?.name || 'Unknown',
-        nakshatra_pada: data.nakshatra?.pada || data.nakshatra_details?.pada || null,
-        nakshatra_lord: data.nakshatra?.lord?.name || data.nakshatra_details?.lord || null,
-        rashi: data.rasi?.name || data.moon_rasi?.name || 'Unknown',
-        rashi_lord: data.rasi?.lord?.name || data.moon_rasi?.lord || null,
-        lagna: data.lagna?.name || data.ascendant?.name || 'Unknown',
-        lagna_lord: data.lagna?.lord?.name || data.ascendant?.lord || null,
-        moon_sign: data.moon_sign?.name || null,
-        sun_sign: data.sun_sign?.name || null,
-        raw_data: data
+        nakshatra: details.nakshatra?.name || 'Unknown',
+        nakshatra_pada: details.nakshatra?.pada || null,
+        nakshatra_lord: details.nakshatra?.lord?.vedic_name || details.nakshatra?.lord?.name || null,
+        rashi: details.chandra_rasi?.name || 'Unknown',
+        rashi_lord: details.chandra_rasi?.lord?.vedic_name || details.chandra_rasi?.lord?.name || null,
+        lagna: details.chandra_rasi?.name || 'Unknown', // Using moon sign as primary
+        lagna_lord: details.chandra_rasi?.lord?.vedic_name || null,
+        moon_sign: details.chandra_rasi?.name || null,
+        sun_sign: details.soorya_rasi?.name || null,
+        zodiac: details.zodiac?.name || null,
+        raw_data: apiData
       };
     } catch (error) {
       console.error('❌ Prokerala birth chart error:', error.response?.data || error.message);
