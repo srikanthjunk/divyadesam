@@ -12,6 +12,7 @@ const rateLimit = require('express-rate-limit');
 
 const ProkerolaService = require('../services/prokerala');
 const EmailService = require('../services/email');
+const CerebrasService = require('../services/cerebras');
 
 // Initialize services
 const prokerola = new ProkerolaService(
@@ -20,6 +21,7 @@ const prokerola = new ProkerolaService(
 );
 
 const emailService = new EmailService(process.env.RESEND_API_KEY);
+const cerebras = new CerebrasService(process.env.CEREBRAS_API_KEY);
 
 // Initialize database
 const db = new Database(process.env.DB_PATH || './database/bhaktimap.db');
@@ -116,8 +118,13 @@ app.post('/api/subscribe', async (req, res) => {
     // Calculate current peyarchi
     const peyarchiEffects = prokerola.calculatePeyarchiManually(birthChart.rashi);
 
+    // Generate full report with LLM explanations, temples, and pariharam
+    console.log('🤖 Generating peyarchi explanations with Cerebras...');
+    const fullPeyarchiReport = await cerebras.generateFullReport(peyarchiEffects, birthChart.rashi);
+    console.log('✅ Peyarchi explanations generated');
+
     // Store peyarchi status
-    for (const [planet, data] of Object.entries(peyarchiEffects)) {
+    for (const [planet, data] of Object.entries(fullPeyarchiReport)) {
       const peyarchiStmt = db.prepare(`
         INSERT INTO peyarchi_status (
           id, subscriber_id, planet, to_rashi, effect, effect_score,
@@ -151,7 +158,10 @@ app.post('/api/subscribe', async (req, res) => {
 
     await emailService.sendWelcomeEmail(subscriber);
 
-    // Return response
+    // Get Tamil rashi name
+    const tamilRashi = cerebras.getTamilRashi(birthChart.rashi);
+
+    // Return response with full report
     res.json({
       success: true,
       subscriberId,
@@ -159,9 +169,10 @@ app.post('/api/subscribe', async (req, res) => {
         nakshatra: birthChart.nakshatra,
         nakshatra_pada: birthChart.nakshatra_pada,
         rashi: birthChart.rashi,
+        rashi_tamil: tamilRashi,
         lagna: birthChart.lagna
       },
-      currentPeyarchi: peyarchiEffects
+      currentPeyarchi: fullPeyarchiReport
     });
 
   } catch (error) {
