@@ -974,32 +974,46 @@
                 // Build temple HTML if available (both Shiva and Vishnu options)
                 let templeHtml = '';
                 if (data.temple) {
-                    const shiva = data.temple.shiva || data.temple;
+                    const shiva = data.temple.shiva;
                     const vishnu = data.temple.vishnu;
 
-                    templeHtml = `
-                        <div class="temple-recommendation">
-                            <h4>🏛️ Recommended Temples</h4>
-                            <div class="temple-options">
-                                <div class="temple-option shiva">
-                                    <span class="temple-type">🔱 Shiva Navagraha</span>
-                                    <p><strong>${shiva.name}</strong></p>
-                                    <p>${shiva.location}</p>
-                                    <a href="https://www.google.com/maps/dir/?api=1&destination=${shiva.coordinates.lat},${shiva.coordinates.lng}"
-                                       target="_blank" class="btn-small">Directions →</a>
+                    // Check if we have the new structure (with shiva/vishnu) or old structure
+                    if (shiva && shiva.coordinates) {
+                        templeHtml = `
+                            <div class="temple-recommendation">
+                                <h4>🏛️ Recommended Temples</h4>
+                                <div class="temple-options">
+                                    <div class="temple-option shiva">
+                                        <span class="temple-type">🔱 Shiva Navagraha</span>
+                                        <p><strong>${shiva.name}</strong></p>
+                                        <p>${shiva.location}</p>
+                                        <a href="https://www.google.com/maps/dir/?api=1&destination=${shiva.coordinates.lat},${shiva.coordinates.lng}"
+                                           target="_blank" class="btn-small">Directions →</a>
+                                    </div>
+                                    ${vishnu && vishnu.coordinates ? `
+                                    <div class="temple-option vishnu">
+                                        <span class="temple-type">🙏 Vishnu Navagraha</span>
+                                        <p><strong>${vishnu.name}</strong></p>
+                                        <p>${vishnu.location}</p>
+                                        <a href="https://www.google.com/maps/dir/?api=1&destination=${vishnu.coordinates.lat},${vishnu.coordinates.lng}"
+                                           target="_blank" class="btn-small">Directions →</a>
+                                    </div>
+                                    ` : ''}
                                 </div>
-                                ${vishnu ? `
-                                <div class="temple-option vishnu">
-                                    <span class="temple-type">🙏 Vishnu Navagraha</span>
-                                    <p><strong>${vishnu.name}</strong></p>
-                                    <p>${vishnu.location}</p>
-                                    <a href="https://www.google.com/maps/dir/?api=1&destination=${vishnu.coordinates.lat},${vishnu.coordinates.lng}"
-                                       target="_blank" class="btn-small">Directions →</a>
-                                </div>
-                                ` : ''}
                             </div>
-                        </div>
-                    `;
+                        `;
+                    } else if (data.temple.coordinates) {
+                        // Old structure fallback
+                        templeHtml = `
+                            <div class="temple-recommendation">
+                                <h4>🏛️ Recommended Temple</h4>
+                                <p><strong>${data.temple.name}</strong></p>
+                                <p>${data.temple.location}</p>
+                                <a href="https://www.google.com/maps/dir/?api=1&destination=${data.temple.coordinates.lat},${data.temple.coordinates.lng}"
+                                   target="_blank" class="btn-small">Directions →</a>
+                            </div>
+                        `;
+                    }
                 }
 
                 card.innerHTML = `
@@ -1119,7 +1133,7 @@
 
     <!-- Version Footer -->
     <div id="version-footer" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; padding: 5px 12px; border-radius: 15px; font-size: 11px; z-index: 1000;">
-        v1.4.0 | 21-NOV-2025
+        v1.4.1 | 21-NOV-2025
     </div>
 </body>
 </html>
