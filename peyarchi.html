@@ -404,6 +404,52 @@
             color: #92400e;
         }
 
+        .temple-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .temple-options {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .temple-option {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .temple-option.shiva {
+            border-left: 4px solid #f97316;
+        }
+
+        .temple-option.vishnu {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .temple-type {
+            font-size: 12px;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .temple-option.shiva .temple-type {
+            color: #ea580c;
+        }
+
+        .temple-option.vishnu .temple-type {
+            color: #2563eb;
+        }
+
+        .temple-option p {
+            margin: 4px 0;
+            font-size: 13px;
+        }
+
         .pariharam-section {
             background: #f0fdf4;
             border-radius: 10px;
@@ -689,14 +735,6 @@
                 </div>
             </div>
 
-            <!-- Temple Recommendations -->
-            <div class="temple-recommendations">
-                <h3>🏛️ Recommended Navagraha Temples</h3>
-                <div id="templeCards">
-                    <!-- Dynamically populated -->
-                </div>
-                <div id="temple-map"></div>
-            </div>
         </div>
 
         <!-- Footer -->
@@ -871,9 +909,6 @@
             // Display Peyarchi Status
             displayPeyarchiStatus(data.currentPeyarchi);
 
-            // Display Temple Recommendations
-            displayTempleRecommendations(data.currentPeyarchi);
-
             // Show results section
             resultsSection.classList.add('active');
 
@@ -936,16 +971,33 @@
                     `;
                 }
 
-                // Build temple HTML if available
+                // Build temple HTML if available (both Shiva and Vishnu options)
                 let templeHtml = '';
                 if (data.temple) {
+                    const shiva = data.temple.shiva || data.temple;
+                    const vishnu = data.temple.vishnu;
+
                     templeHtml = `
                         <div class="temple-recommendation">
-                            <h4>🏛️ Recommended Temple</h4>
-                            <p><strong>${data.temple.name}</strong></p>
-                            <p>${data.temple.location} - ${data.temple.deity}</p>
-                            <a href="https://www.google.com/maps/dir/?api=1&destination=${data.temple.coordinates.lat},${data.temple.coordinates.lng}"
-                               target="_blank" class="btn-small">Get Directions →</a>
+                            <h4>🏛️ Recommended Temples</h4>
+                            <div class="temple-options">
+                                <div class="temple-option shiva">
+                                    <span class="temple-type">🔱 Shiva Navagraha</span>
+                                    <p><strong>${shiva.name}</strong></p>
+                                    <p>${shiva.location}</p>
+                                    <a href="https://www.google.com/maps/dir/?api=1&destination=${shiva.coordinates.lat},${shiva.coordinates.lng}"
+                                       target="_blank" class="btn-small">Directions →</a>
+                                </div>
+                                ${vishnu ? `
+                                <div class="temple-option vishnu">
+                                    <span class="temple-type">🙏 Vishnu Navagraha</span>
+                                    <p><strong>${vishnu.name}</strong></p>
+                                    <p>${vishnu.location}</p>
+                                    <a href="https://www.google.com/maps/dir/?api=1&destination=${vishnu.coordinates.lat},${vishnu.coordinates.lng}"
+                                       target="_blank" class="btn-small">Directions →</a>
+                                </div>
+                                ` : ''}
+                            </div>
                         </div>
                     `;
                 }
@@ -1067,7 +1119,7 @@
 
     <!-- Version Footer -->
     <div id="version-footer" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; padding: 5px 12px; border-radius: 15px; font-size: 11px; z-index: 1000;">
-        v1.3.0 | 21-NOV-2025
+        v1.4.0 | 21-NOV-2025
     </div>
 </body>
 </html>

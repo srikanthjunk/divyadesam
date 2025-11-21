@@ -109,9 +109,9 @@ Keep the response concise and practical.`;
   }
 
   /**
-   * Get Navagraha temple for planet
+   * Get Navagraha temple for planet (Shiva temples - traditional)
    */
-  getNavagrahaTemple(planet) {
+  getShivaTemple(planet) {
     const temples = {
       'Sani': {
         name: 'Thirunallar Saniswaran Temple',
@@ -169,6 +169,79 @@ Keep the response concise and practical.`;
       }
     };
     return temples[planet] || temples['Sani'];
+  }
+
+  /**
+   * Get Vishnu Navagraha temple for planet (Divya Desam temples)
+   */
+  getVishnuTemple(planet) {
+    const temples = {
+      'Sani': {
+        name: 'Oppiliappan Kovil',
+        location: 'Thiruvinnagaram, Kumbakonam',
+        deity: 'Sri Oppiliappan (Vishnu)',
+        coordinates: { lat: 10.9947, lng: 79.4539 }
+      },
+      'Guru': {
+        name: 'Andallakummaiyyan Temple',
+        location: 'Thiruaadhanoor, Thanjavur',
+        deity: 'Sri Andalakummaiyyan (Vishnu)',
+        coordinates: { lat: 10.8833, lng: 79.3833 }
+      },
+      'Rahu': {
+        name: 'Gajendra Varadan Kovil',
+        location: 'Thirukavithalam, Thanjavur',
+        deity: 'Sri Gajendra Varadan (Vishnu)',
+        coordinates: { lat: 10.9167, lng: 79.4000 }
+      },
+      'Ketu': {
+        name: 'Jagat Rakshakan Kovil',
+        location: 'Thirukudaloor, Mayiladuthurai',
+        deity: 'Sri Jagat Rakshakan (Vishnu)',
+        coordinates: { lat: 11.1000, lng: 79.6500 }
+      },
+      'Surya': {
+        name: 'Sri Sarangapani Temple',
+        location: 'Thirukudanthai, Kumbakonam',
+        deity: 'Sri Sarangapani (Vishnu)',
+        coordinates: { lat: 10.9617, lng: 79.3778 }
+      },
+      'Chandra': {
+        name: 'Sri Naadan Kovil',
+        location: 'Thirunandipura Vinnagaram',
+        deity: 'Sri Naadan (Vishnu)',
+        coordinates: { lat: 10.9500, lng: 79.4000 }
+      },
+      'Sevvai': {
+        name: 'Nachiyaar Kovil',
+        location: 'Thirunaraiyur, Kumbakonam',
+        deity: 'Sri Srinivasan & Nachiyaar (Vishnu)',
+        coordinates: { lat: 10.9833, lng: 79.4167 }
+      },
+      'Budhan': {
+        name: 'Valvil Ramar Kovil',
+        location: 'Thirupullamboothangudi',
+        deity: 'Sri Valvil Ramar (Vishnu)',
+        coordinates: { lat: 10.9333, lng: 79.4333 }
+      },
+      'Sukran': {
+        name: 'Valvil Ramar Kovil',
+        location: 'Thiruvelliyankudi',
+        deity: 'Sri Kolavilli Ramar (Vishnu)',
+        coordinates: { lat: 10.9167, lng: 79.4500 }
+      }
+    };
+    return temples[planet] || temples['Sani'];
+  }
+
+  /**
+   * Get temples for planet (returns both Shiva and Vishnu options)
+   */
+  getNavagrahaTemple(planet) {
+    return {
+      shiva: this.getShivaTemple(planet),
+      vishnu: this.getVishnuTemple(planet)
+    };
   }
 
   /**
