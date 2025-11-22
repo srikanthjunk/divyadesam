@@ -1,9 +1,9 @@
 /**
  * Cashfree Payment Gateway Service
- * Handles payment orders, verification, and subscription management
+ * Uses direct API calls for reliability
  */
 
-const { Cashfree, CFEnvironment } = require('cashfree-pg');
+const axios = require('axios');
 
 class CashfreeService {
   constructor(clientId, clientSecret, isProduction = true) {
@@ -11,15 +11,10 @@ class CashfreeService {
     this.clientSecret = clientSecret;
     this.isProduction = isProduction;
 
-    // Configure Cashfree SDK (static properties)
-    Cashfree.XClientId = clientId;
-    Cashfree.XClientSecret = clientSecret;
-    Cashfree.XEnvironment = isProduction
-      ? CFEnvironment.PRODUCTION
-      : CFEnvironment.SANDBOX;
-
-    // Create instance for calling methods
-    this.client = new Cashfree();
+    // API base URL based on environment
+    this.baseUrl = isProduction
+      ? 'https://api.cashfree.com/pg'
+      : 'https://sandbox.cashfree.com/pg';
 
     // Subscription plans
     this.plans = {
@@ -55,6 +50,18 @@ class CashfreeService {
         tier: 'joint_family',
         duration: 365
       }
+    };
+  }
+
+  /**
+   * Get API headers
+   */
+  getHeaders() {
+    return {
+      'Content-Type': 'application/json',
+      'x-client-id': this.clientId,
+      'x-client-secret': this.clientSecret,
+      'x-api-version': '2023-08-01'
     };
   }
 
@@ -95,7 +102,9 @@ class CashfreeService {
 
     try {
       console.log('📦 Creating Cashfree order:', orderId);
-      const response = await this.client.PGCreateOrder("2023-08-01", request);
+      const response = await axios.post(`${this.baseUrl}/orders`, request, {
+        headers: this.getHeaders()
+      });
 
       console.log('✅ Cashfree order created:', response.data.order_id);
 
@@ -118,7 +127,9 @@ class CashfreeService {
   async verifyPayment(orderId) {
     try {
       console.log('🔍 Verifying Cashfree payment:', orderId);
-      const response = await this.client.PGOrderFetchPayments("2023-08-01", orderId);
+      const response = await axios.get(`${this.baseUrl}/orders/${orderId}/payments`, {
+        headers: this.getHeaders()
+      });
 
       const payments = response.data;
 
@@ -153,7 +164,9 @@ class CashfreeService {
    */
   async getOrderStatus(orderId) {
     try {
-      const response = await this.client.PGFetchOrder("2023-08-01", orderId);
+      const response = await axios.get(`${this.baseUrl}/orders/${orderId}`, {
+        headers: this.getHeaders()
+      });
       return {
         success: true,
         order_id: response.data.order_id,
