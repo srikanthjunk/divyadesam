@@ -720,11 +720,48 @@
             width: 90%;
             max-width: 400px;
             text-align: center;
+            position: relative;
+        }
+
+        .signup-modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #999;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .signup-modal-close:hover {
+            color: #333;
         }
 
         .signup-modal h3 {
             color: #667eea;
             margin-bottom: 10px;
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .password-toggle:hover {
+            color: #333;
         }
 
         .signup-modal p {
@@ -887,8 +924,9 @@
         </div>
 
         <!-- Signup Modal -->
-        <div id="signupModalOverlay" class="signup-modal-overlay">
+        <div id="signupModalOverlay" class="signup-modal-overlay" onclick="if(event.target === this) closeSignupModal()">
             <div class="signup-modal">
+                <button class="signup-modal-close" onclick="closeSignupModal()">&times;</button>
                 <h3>Create Your Account</h3>
                 <p>Your birth details will be saved automatically. Add family members from your dashboard.</p>
 
@@ -896,7 +934,10 @@
 
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" id="signupPassword" placeholder="Min 6 characters" required>
+                    <div class="password-wrapper">
+                        <input type="password" id="signupPassword" placeholder="Min 6 characters" required onkeypress="if(event.key === 'Enter') handleQuickSignup()">
+                        <button type="button" class="password-toggle" onclick="togglePassword()">👁</button>
+                    </div>
                 </div>
 
                 <div class="signup-modal-buttons">
@@ -1327,6 +1368,18 @@
             sessionStorage.setItem('signup_dismissed', 'true');
         }
 
+        function togglePassword() {
+            const input = document.getElementById('signupPassword');
+            const toggle = document.querySelector('.password-toggle');
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggle.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                toggle.textContent = '👁';
+            }
+        }
+
         async function handleQuickSignup() {
             const password = document.getElementById('signupPassword').value;
             const errorDiv = document.getElementById('signupModalError');
@@ -1366,6 +1419,7 @@
                 localStorage.setItem('bhaktimap_token', data.token);
 
                 // Add self as family member with birth details
+                console.log('Adding family member with:', lastFormData);
                 const memberResponse = await fetch(`${API_BASE_URL}/family/members`, {
                     method: 'POST',
                     headers: {
@@ -1383,6 +1437,13 @@
                         longitude: lastFormData.longitude
                     })
                 });
+
+                const memberData = await memberResponse.json();
+                console.log('Member response:', memberData);
+
+                if (!memberResponse.ok) {
+                    console.error('Failed to add member:', memberData);
+                }
 
                 closeSignupModal();
                 document.getElementById('signupBanner').classList.remove('active');
@@ -1410,7 +1471,7 @@
 
     <!-- Version Footer -->
     <div id="version-footer" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; padding: 5px 12px; border-radius: 15px; font-size: 11px; z-index: 1000;">
-        v1.5.2 | 21-NOV-2025
+        v1.5.3 | 22-NOV-2025
     </div>
 </body>
 </html>
