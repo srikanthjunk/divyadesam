@@ -79,6 +79,16 @@
             background: rgba(255,255,255,0.3);
         }
 
+        /* Cancel button in modals (white background) */
+        .modal .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .modal .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
         .btn-danger {
             background: #e74c3c;
             color: white;
@@ -594,9 +604,10 @@
             <div class="form-group">
                 <label>Place of Birth</label>
                 <div class="location-input-wrapper">
-                    <input type="text" id="member-place" placeholder="Start typing city name..." autocomplete="off">
+                    <input type="text" id="member-place" placeholder="Type city name and select from list..." autocomplete="off">
                     <div id="location-suggestions" class="location-suggestions"></div>
                 </div>
+                <small style="color: #888; font-size: 0.8rem;">Wait for suggestions to appear, then select your city</small>
             </div>
 
             <div class="modal-actions">
