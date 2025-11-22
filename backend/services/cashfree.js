@@ -3,7 +3,7 @@
  * Handles payment orders, verification, and subscription management
  */
 
-const Cashfree = require('cashfree-pg');
+const { Cashfree, CFEnvironment } = require('cashfree-pg');
 
 class CashfreeService {
   constructor(clientId, clientSecret, isProduction = true) {
@@ -12,13 +12,13 @@ class CashfreeService {
     this.isProduction = isProduction;
 
     // Configure Cashfree SDK
-    Cashfree.Cashfree.XClientId = clientId;
-    Cashfree.Cashfree.XClientSecret = clientSecret;
-    Cashfree.Cashfree.XEnvironment = isProduction
-      ? Cashfree.Cashfree.Environment.PRODUCTION
-      : Cashfree.Cashfree.Environment.SANDBOX;
+    Cashfree.XClientId = clientId;
+    Cashfree.XClientSecret = clientSecret;
+    Cashfree.XEnvironment = isProduction
+      ? CFEnvironment.PRODUCTION
+      : CFEnvironment.SANDBOX;
 
-    this.client = Cashfree.Cashfree;
+    this.client = Cashfree;
 
     // Subscription plans
     this.plans = {
