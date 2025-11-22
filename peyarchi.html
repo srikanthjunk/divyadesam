@@ -746,18 +746,27 @@
 
         .password-wrapper {
             position: relative;
+            display: block;
+            width: 100%;
+        }
+
+        .password-wrapper input {
+            width: 100%;
+            padding-right: 45px;
         }
 
         .password-toggle {
             position: absolute;
-            right: 12px;
+            right: 10px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 1.2rem;
-            color: #666;
+            font-size: 1.1rem;
+            color: #888;
+            padding: 5px;
+            line-height: 1;
         }
 
         .password-toggle:hover {
