@@ -762,6 +762,8 @@
             if (authToken) {
                 showDashboard();
                 loadUserData();
+                // Check for pending birth data from peyarchi signup
+                checkPendingBirthData();
             } else {
                 showAuth();
             }
@@ -769,6 +771,38 @@
             // Initialize location autocomplete
             initLocationAutocomplete();
         });
+
+        // Check if there's pending birth data to add
+        async function checkPendingBirthData() {
+            const pendingData = localStorage.getItem('bhaktimap_pending_birth');
+            if (!pendingData) return;
+
+            try {
+                const birthData = JSON.parse(pendingData);
+                console.log('Found pending birth data:', birthData);
+
+                // Try to add it as family member
+                const response = await fetch(`${API_BASE_URL}/family/members`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(birthData)
+                });
+
+                if (response.ok) {
+                    console.log('Pending birth data added successfully');
+                    localStorage.removeItem('bhaktimap_pending_birth');
+                    loadFamily(); // Refresh the list
+                } else {
+                    console.log('Could not add pending birth data:', await response.json());
+                    // Keep it for retry later
+                }
+            } catch (error) {
+                console.error('Error processing pending birth data:', error);
+            }
+        }
 
         // ========================================
         // Location Autocomplete
@@ -1080,11 +1114,15 @@
         function updateSubscriptionBanner() {
             const banner = document.getElementById('subscription-banner');
             const tier = currentUser?.subscription_tier || 'free';
+            const status = currentUser?.subscription_status || 'inactive';
 
             const limits = { free: 1, family: 5, joint_family: 15 };
             const names = { free: 'Free Plan', family: 'Family Plan', joint_family: 'Joint Family Plan' };
 
-            if (tier !== 'free') {
+            // Check if subscription is actually active
+            const isActive = tier !== 'free' && status === 'active';
+
+            if (isActive) {
                 banner.classList.add('premium');
                 banner.innerHTML = `
                     <div>
@@ -1093,6 +1131,7 @@
                     <span style="background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 12px;">Active</span>
                 `;
             } else {
+                banner.classList.remove('premium');
                 banner.innerHTML = `
                     <div>
                         <strong>Free Plan</strong> - Track peyarchi for yourself only

@@ -1501,6 +1501,8 @@
 
                 if (!memberResponse.ok) {
                     console.error('Failed to add member:', memberResult);
+                    // Store pending birth data for dashboard to pick up
+                    localStorage.setItem('bhaktimap_pending_birth', JSON.stringify(memberData));
                     // Account created but member failed - show warning
                     showSuccess('Account created! Please add your birth details from the dashboard.');
                     banner.innerHTML = `
