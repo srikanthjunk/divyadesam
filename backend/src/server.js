@@ -13,10 +13,12 @@ const rateLimit = require('express-rate-limit');
 const ProkerolaService = require('../services/prokerala');
 const EmailService = require('../services/email');
 const CerebrasService = require('../services/cerebras');
+const CashfreeService = require('../services/cashfree');
 
 // Import routes
 const authRoutes = require('./routes/auth');
 const familyRoutes = require('./routes/family');
+const paymentRoutes = require('./routes/payments');
 
 // Initialize services
 const prokerola = new ProkerolaService(
@@ -26,6 +28,11 @@ const prokerola = new ProkerolaService(
 
 const emailService = new EmailService(process.env.RESEND_API_KEY);
 const cerebras = new CerebrasService(process.env.CEREBRAS_API_KEY);
+const cashfree = new CashfreeService(
+  process.env.CASHFREE_CLIENT_ID,
+  process.env.CASHFREE_CLIENT_SECRET,
+  process.env.NODE_ENV === 'production'
+);
 
 // Initialize database
 const db = new Database(process.env.DB_PATH || './database/bhaktimap.db');
@@ -56,12 +63,14 @@ app.locals.db = db;
 app.locals.prokerola = prokerola;
 app.locals.cerebras = cerebras;
 app.locals.emailService = emailService;
+app.locals.cashfree = cashfree;
 
 // ========================================
-// Auth & Family Routes
+// Auth, Family & Payment Routes
 // ========================================
 app.use('/api/auth', authRoutes);
 app.use('/api/family', familyRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // ========================================
 // Legacy API Routes (existing peyarchi)

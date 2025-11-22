@@ -299,4 +299,22 @@ CREATE INDEX IF NOT EXISTS idx_users_subscription ON users(subscription_status, 
 CREATE INDEX IF NOT EXISTS idx_family_groups_owner ON family_groups(owner_id);
 CREATE INDEX IF NOT EXISTS idx_family_members_group ON family_members(group_id);
 CREATE INDEX IF NOT EXISTS idx_pooja_bookings_user ON pooja_bookings(user_id, status);
-CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications_sent(user_id, sent_at)
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications_sent(user_id, sent_at);
+
+-- Payment orders (Cashfree)
+CREATE TABLE IF NOT EXISTS payment_orders (
+    id TEXT PRIMARY KEY, -- Cashfree order_id
+    user_id TEXT NOT NULL,
+    plan_id TEXT NOT NULL, -- family_monthly, family_yearly, etc.
+    amount INTEGER NOT NULL, -- in INR
+    currency TEXT DEFAULT 'INR',
+    status TEXT DEFAULT 'pending', -- pending, completed, failed, expired, cancelled
+    payment_id TEXT, -- Cashfree payment_id
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    completed_at DATETIME,
+
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_payment_orders_user ON payment_orders(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_payment_orders_status ON payment_orders(status, created_at)
