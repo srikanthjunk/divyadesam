@@ -11,14 +11,15 @@ class CashfreeService {
     this.clientSecret = clientSecret;
     this.isProduction = isProduction;
 
-    // Configure Cashfree SDK
+    // Configure Cashfree SDK (static properties)
     Cashfree.XClientId = clientId;
     Cashfree.XClientSecret = clientSecret;
     Cashfree.XEnvironment = isProduction
       ? CFEnvironment.PRODUCTION
       : CFEnvironment.SANDBOX;
 
-    this.client = Cashfree;
+    // Create instance for calling methods
+    this.client = new Cashfree();
 
     // Subscription plans
     this.plans = {

@@ -1412,6 +1412,13 @@
                 return;
             }
 
+            // Validate birth details are present
+            if (!lastFormData.dateOfBirth || !lastFormData.timeOfBirth) {
+                errorDiv.textContent = 'Birth details missing. Please refresh and try again.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
             try {
                 // Create account
                 const response = await fetch(`${API_BASE_URL}/auth/signup`, {
@@ -1434,28 +1441,32 @@
                 // Save token
                 localStorage.setItem('bhaktimap_token', data.token);
 
+                // Prepare member data
+                const memberData = {
+                    name: lastFormData.name || 'User',
+                    relationship: 'self',
+                    email: lastFormData.email,
+                    dateOfBirth: lastFormData.dateOfBirth,
+                    timeOfBirth: lastFormData.timeOfBirth,
+                    placeOfBirth: lastFormData.placeOfBirth || 'India',
+                    latitude: lastFormData.latitude || 13.0827,
+                    longitude: lastFormData.longitude || 80.2707
+                };
+
+                console.log('Adding family member with:', memberData);
+
                 // Add self as family member with birth details
-                console.log('Adding family member with:', lastFormData);
                 const memberResponse = await fetch(`${API_BASE_URL}/family/members`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${data.token}`
                     },
-                    body: JSON.stringify({
-                        name: lastFormData.name,
-                        relationship: 'self',
-                        email: lastFormData.email,
-                        dateOfBirth: lastFormData.dateOfBirth,
-                        timeOfBirth: lastFormData.timeOfBirth,
-                        placeOfBirth: lastFormData.placeOfBirth,
-                        latitude: lastFormData.latitude,
-                        longitude: lastFormData.longitude
-                    })
+                    body: JSON.stringify(memberData)
                 });
 
-                const memberData = await memberResponse.json();
-                console.log('Member response:', memberData);
+                const memberResult = await memberResponse.json();
+                console.log('Member response:', memberResult);
 
                 closeSignupModal();
                 document.getElementById('signupBanner').classList.remove('active');
@@ -1464,7 +1475,7 @@
                 const banner = document.getElementById('signupBanner');
 
                 if (!memberResponse.ok) {
-                    console.error('Failed to add member:', memberData);
+                    console.error('Failed to add member:', memberResult);
                     // Account created but member failed - show warning
                     showSuccess('Account created! Please add your birth details from the dashboard.');
                     banner.innerHTML = `
@@ -1479,7 +1490,7 @@
                     showSuccess('Account created! Your birth details have been saved.');
                     banner.innerHTML = `
                         <h3>Account Created Successfully!</h3>
-                        <p>Your birth details (${memberData.member.rashi} rashi) have been saved. You can add family members from your dashboard.</p>
+                        <p>Your birth details (${memberResult.member.rashi} rashi) have been saved. You can add family members from your dashboard.</p>
                         <div class="signup-banner-buttons">
                             <button class="btn-signup" onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
                         </div>
