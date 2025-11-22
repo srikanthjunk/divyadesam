@@ -1145,16 +1145,27 @@
             // Show results section
             resultsSection.classList.add('active');
 
-            // Show signup banner (unless already logged in or dismissed)
+            // Show appropriate banner based on login state
             const hasToken = localStorage.getItem('bhaktimap_token');
             const isDismissed = sessionStorage.getItem('signup_dismissed');
+            const signupBanner = document.getElementById('signupBanner');
+
             console.log('Signup banner check:', { hasToken: !!hasToken, isDismissed: !!isDismissed });
 
-            if (!hasToken && !isDismissed) {
+            if (hasToken) {
+                // User is logged in - show dashboard CTA
+                signupBanner.innerHTML = `
+                    <h3>View Your Full Dashboard</h3>
+                    <p>Your peyarchi analysis has been saved! View your complete family dashboard to add more members and see all alerts.</p>
+                    <div class="signup-banner-buttons">
+                        <button class="btn-signup" onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
+                    </div>
+                `;
+                signupBanner.classList.add('active');
+            } else if (!isDismissed) {
+                // Not logged in - show signup CTA
                 console.log('Showing signup banner');
-                document.getElementById('signupBanner').classList.add('active');
-            } else {
-                console.log('Not showing signup banner - already logged in or dismissed');
+                signupBanner.classList.add('active');
             }
 
             // Scroll to results
