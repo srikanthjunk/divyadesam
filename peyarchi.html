@@ -1129,8 +1129,15 @@
             resultsSection.classList.add('active');
 
             // Show signup banner (unless already logged in or dismissed)
-            if (!localStorage.getItem('bhaktimap_token') && !sessionStorage.getItem('signup_dismissed')) {
+            const hasToken = localStorage.getItem('bhaktimap_token');
+            const isDismissed = sessionStorage.getItem('signup_dismissed');
+            console.log('Signup banner check:', { hasToken: !!hasToken, isDismissed: !!isDismissed });
+
+            if (!hasToken && !isDismissed) {
+                console.log('Showing signup banner');
                 document.getElementById('signupBanner').classList.add('active');
+            } else {
+                console.log('Not showing signup banner - already logged in or dismissed');
             }
 
             // Scroll to results
@@ -1471,7 +1478,7 @@
 
     <!-- Version Footer -->
     <div id="version-footer" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; padding: 5px 12px; border-radius: 15px; font-size: 11px; z-index: 1000;">
-        v1.5.3 | 22-NOV-2025
+        v1.5.4 | 22-NOV-2025
     </div>
 </body>
 </html>
