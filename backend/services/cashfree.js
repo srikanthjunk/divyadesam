@@ -3,19 +3,22 @@
  * Handles payment orders, verification, and subscription management
  */
 
-const { Cashfree } = require('cashfree-pg');
+const Cashfree = require('cashfree-pg');
 
 class CashfreeService {
   constructor(clientId, clientSecret, isProduction = true) {
     this.clientId = clientId;
     this.clientSecret = clientSecret;
+    this.isProduction = isProduction;
 
     // Configure Cashfree SDK
-    Cashfree.XClientId = clientId;
-    Cashfree.XClientSecret = clientSecret;
-    Cashfree.XEnvironment = isProduction
-      ? Cashfree.Environment.PRODUCTION
-      : Cashfree.Environment.SANDBOX;
+    Cashfree.Cashfree.XClientId = clientId;
+    Cashfree.Cashfree.XClientSecret = clientSecret;
+    Cashfree.Cashfree.XEnvironment = isProduction
+      ? Cashfree.Cashfree.Environment.PRODUCTION
+      : Cashfree.Cashfree.Environment.SANDBOX;
+
+    this.client = Cashfree.Cashfree;
 
     // Subscription plans
     this.plans = {
@@ -91,7 +94,7 @@ class CashfreeService {
 
     try {
       console.log('📦 Creating Cashfree order:', orderId);
-      const response = await Cashfree.PGCreateOrder("2023-08-01", request);
+      const response = await this.client.PGCreateOrder("2023-08-01", request);
 
       console.log('✅ Cashfree order created:', response.data.order_id);
 
@@ -114,7 +117,7 @@ class CashfreeService {
   async verifyPayment(orderId) {
     try {
       console.log('🔍 Verifying Cashfree payment:', orderId);
-      const response = await Cashfree.PGOrderFetchPayments("2023-08-01", orderId);
+      const response = await this.client.PGOrderFetchPayments("2023-08-01", orderId);
 
       const payments = response.data;
 
@@ -149,7 +152,7 @@ class CashfreeService {
    */
   async getOrderStatus(orderId) {
     try {
-      const response = await Cashfree.PGFetchOrder("2023-08-01", orderId);
+      const response = await this.client.PGFetchOrder("2023-08-01", orderId);
       return {
         success: true,
         order_id: response.data.order_id,
