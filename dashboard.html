@@ -711,22 +711,26 @@
 
     <!-- Upgrade Modal -->
     <div id="upgrade-modal" class="modal-overlay">
-        <div class="modal">
+        <div class="modal" style="max-width: 550px;">
             <div class="modal-header">
-                <h3>Upgrade Your Plan</h3>
+                <h3>Track Your Entire Family's Peyarchi</h3>
                 <button class="modal-close" onclick="closeUpgradeModal()">&times;</button>
             </div>
             <div id="upgrade-error" class="error-message" style="display: none;"></div>
 
-            <p style="color: #666; margin-bottom: 15px;">Unlock more family members and get peyarchi alerts for your entire family!</p>
+            <div style="background: #f0f4ff; padding: 12px 15px; border-radius: 8px; margin-bottom: 15px;">
+                <p style="color: #444; margin: 0; font-size: 0.95rem;">
+                    <strong>Why upgrade?</strong> Get personalized peyarchi analysis and email alerts for your spouse, children, and parents - all in one dashboard.
+                </p>
+            </div>
 
             <div id="plans-container" class="plans-container">
                 <div class="loading">Loading plans...</div>
             </div>
 
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeUpgradeModal()">Cancel</button>
-            </div>
+            <p style="color: #888; font-size: 0.8rem; text-align: center; margin-top: 15px;">
+                Secure payment via Cashfree. Cancel anytime.
+            </p>
         </div>
     </div>
 
@@ -1086,14 +1090,14 @@
                     <div>
                         <strong>${names[tier]}</strong> - Up to ${limits[tier]} family members
                     </div>
-                    <span>Active</span>
+                    <span style="background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 12px;">Active</span>
                 `;
             } else {
                 banner.innerHTML = `
                     <div>
-                        <strong>Free Plan</strong> - Add up to 1 family member
+                        <strong>Free Plan</strong> - Track peyarchi for yourself only
                     </div>
-                    <button class="btn btn-secondary btn-small" onclick="showUpgradeModal()">Upgrade</button>
+                    <button class="btn btn-secondary btn-small" onclick="showUpgradeModal()">Add Family - ₹99/mo</button>
                 `;
             }
         }
@@ -1220,29 +1224,30 @@
         function displayPlans(plans) {
             const container = document.getElementById('plans-container');
             container.innerHTML = `
-                <div class="plan-card">
+                <div class="plan-card" style="border: 2px solid #667eea; position: relative;">
+                    <span style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #667eea; color: white; padding: 2px 12px; border-radius: 10px; font-size: 0.75rem;">MOST POPULAR</span>
                     <h4>Family Plan</h4>
-                    <p class="plan-desc">Up to 5 family members</p>
+                    <p class="plan-desc">You + Spouse + 3 Children</p>
                     <div class="plan-prices">
                         <button class="plan-btn" onclick="selectPlan('family_monthly')">
                             <span class="price">₹99</span>/month
                         </button>
                         <button class="plan-btn recommended" onclick="selectPlan('family_yearly')">
                             <span class="price">₹999</span>/year
-                            <span class="savings">Save ₹189!</span>
+                            <span class="savings">2 months free!</span>
                         </button>
                     </div>
                 </div>
                 <div class="plan-card">
                     <h4>Joint Family Plan</h4>
-                    <p class="plan-desc">Up to 15 family members</p>
+                    <p class="plan-desc">Parents, in-laws & extended family</p>
                     <div class="plan-prices">
                         <button class="plan-btn" onclick="selectPlan('joint_family_monthly')">
                             <span class="price">₹199</span>/month
                         </button>
                         <button class="plan-btn recommended" onclick="selectPlan('joint_family_yearly')">
                             <span class="price">₹1999</span>/year
-                            <span class="savings">Save ₹389!</span>
+                            <span class="savings">2 months free!</span>
                         </button>
                     </div>
                 </div>

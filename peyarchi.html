@@ -922,11 +922,16 @@
 
             <!-- Signup Banner (shown after results) -->
             <div id="signupBanner" class="signup-banner">
-                <h3>🔔 Get Peyarchi Alerts for Your Family</h3>
-                <p>Create a free account to save your birth details, add family members, and receive email alerts when important planetary transits occur.</p>
+                <h3>Save Your Peyarchi Report</h3>
+                <p>Your analysis is ready! Create a free account to:</p>
+                <ul style="text-align: left; margin: 10px 0 15px 20px; font-size: 0.95rem;">
+                    <li>Save this report to your dashboard</li>
+                    <li>Get email alerts before major transits</li>
+                    <li>Add family members (paid plans)</li>
+                </ul>
                 <div class="signup-banner-buttons">
-                    <button class="btn-signup" onclick="showSignupModal()">Create Free Account</button>
-                    <button class="btn-guest" onclick="dismissSignupBanner()">Continue as Guest</button>
+                    <button class="btn-signup" onclick="showSignupModal()">Save My Report - Free</button>
+                    <button class="btn-guest" onclick="dismissSignupBanner()">Maybe Later</button>
                 </div>
             </div>
 
@@ -936,13 +941,14 @@
         <div id="signupModalOverlay" class="signup-modal-overlay" onclick="if(event.target === this) closeSignupModal()">
             <div class="signup-modal">
                 <button class="signup-modal-close" onclick="closeSignupModal()">&times;</button>
-                <h3>Create Your Account</h3>
-                <p>Your birth details will be saved automatically. Add family members from your dashboard.</p>
+                <h3>Almost Done!</h3>
+                <p style="color: #666; margin-bottom: 5px;">Just set a password to save your peyarchi report.</p>
+                <p style="color: #888; font-size: 0.85rem; margin-bottom: 15px;">Email: <strong id="signupEmailDisplay"></strong></p>
 
                 <div id="signupModalError" class="signup-error"></div>
 
                 <div class="form-group">
-                    <label>Password</label>
+                    <label>Choose a Password</label>
                     <div class="password-wrapper">
                         <input type="password" id="signupPassword" placeholder="Min 6 characters" required onkeypress="if(event.key === 'Enter') handleQuickSignup()">
                         <button type="button" class="password-toggle" onclick="togglePassword()">👁</button>
@@ -951,8 +957,10 @@
 
                 <div class="signup-modal-buttons">
                     <button style="background: #e0e0e0; color: #333;" onclick="closeSignupModal()">Cancel</button>
-                    <button style="background: #667eea; color: white;" onclick="handleQuickSignup()">Create Account</button>
+                    <button style="background: #667eea; color: white;" onclick="handleQuickSignup()">Save My Report</button>
                 </div>
+
+                <p style="color: #999; font-size: 0.75rem; margin-top: 12px; text-align: center;">Free forever for 1 person. Upgrade anytime for family.</p>
             </div>
         </div>
 
@@ -1373,6 +1381,12 @@
         function showSignupModal() {
             document.getElementById('signupModalOverlay').classList.add('active');
             document.getElementById('signupModalError').style.display = 'none';
+            // Show the email they entered
+            if (lastFormData && lastFormData.email) {
+                document.getElementById('signupEmailDisplay').textContent = lastFormData.email;
+            }
+            // Focus on password field
+            setTimeout(() => document.getElementById('signupPassword').focus(), 100);
         }
 
         function closeSignupModal() {
