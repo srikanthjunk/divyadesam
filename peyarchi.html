@@ -1448,25 +1448,34 @@
                 const memberData = await memberResponse.json();
                 console.log('Member response:', memberData);
 
-                if (!memberResponse.ok) {
-                    console.error('Failed to add member:', memberData);
-                }
-
                 closeSignupModal();
                 document.getElementById('signupBanner').classList.remove('active');
 
-                // Show success and redirect option
-                showSuccess('Account created! Your birth details have been saved. Visit your dashboard to add family members.');
-
                 // Replace banner with success message
                 const banner = document.getElementById('signupBanner');
-                banner.innerHTML = `
-                    <h3>Account Created Successfully!</h3>
-                    <p>Your birth details have been saved. Add family members to get alerts for everyone.</p>
-                    <div class="signup-banner-buttons">
-                        <button class="btn-signup" onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
-                    </div>
-                `;
+
+                if (!memberResponse.ok) {
+                    console.error('Failed to add member:', memberData);
+                    // Account created but member failed - show warning
+                    showSuccess('Account created! Please add your birth details from the dashboard.');
+                    banner.innerHTML = `
+                        <h3>Account Created!</h3>
+                        <p>Please add your birth details from the dashboard to receive peyarchi alerts.</p>
+                        <div class="signup-banner-buttons">
+                            <button class="btn-signup" onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
+                        </div>
+                    `;
+                } else {
+                    // Full success - member added
+                    showSuccess('Account created! Your birth details have been saved.');
+                    banner.innerHTML = `
+                        <h3>Account Created Successfully!</h3>
+                        <p>Your birth details (${memberData.member.rashi} rashi) have been saved. You can add family members from your dashboard.</p>
+                        <div class="signup-banner-buttons">
+                            <button class="btn-signup" onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
+                        </div>
+                    `;
+                }
                 banner.classList.add('active');
 
             } catch (error) {
@@ -1478,7 +1487,7 @@
 
     <!-- Version Footer -->
     <div id="version-footer" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; padding: 5px 12px; border-radius: 15px; font-size: 11px; z-index: 1000;">
-        v1.5.4 | 22-NOV-2025
+        v1.5.5 | 22-NOV-2025
     </div>
 </body>
 </html>
